@@ -19,6 +19,13 @@ class CalrissianSession:
             "calrissian-output",
         ]
 
+        try:
+            config.load_incluster_config()  # raises if not in cluster
+        except ConfigException:
+            config.load_kube_config()  # for local debug/test purposes
+
+        self.api_client = client.ApiClient()
+
     def create(self):
 
         self._create_namespace()
@@ -30,14 +37,7 @@ class CalrissianSession:
     def _delete_quota(self, quota_name):
 
         try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        client.ApiClient()
-
-        try:
-            response = client.CoreV1Api().delete_namespaced_resource_quota(
+            response = self.client.CoreV1Api().delete_namespaced_resource_quota(
                 namespace=self.namespace, name=quota_name
             )
             print(response)
@@ -53,18 +53,11 @@ class CalrissianSession:
 
         self.delete_quota(quota_name)
 
-        try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        client.ApiClient()
-
         resource_quota = client.V1ResourceQuota(spec=client.V1ResourceQuotaSpec(hard=resources))
         resource_quota.metadata = client.V1ObjectMeta(namespace=self.namespace, name=quota_name)
 
         try:
-            response = client.CoreV1Api().create_namespaced_resource_quota(
+            response = self.client.CoreV1Api().create_namespaced_resource_quota(
                 self.namespace, resource_quota
             )
             return response
@@ -75,13 +68,6 @@ class CalrissianSession:
                 raise e
 
     def _dispose_pvc(self):
-
-        try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        client.ApiClient()
 
         pvcs = client.CoreV1Api().list_namespaced_persistent_volume_claim(
             namespace=self.namespace, watch=False
@@ -113,9 +99,7 @@ class CalrissianSession:
         api_groups: list = ["*"],
     ):
 
-        api_client = client.ApiClient()
-
-        metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
+        metadata = self.client.V1ObjectMeta(name=name, namespace=self.namespace)
 
         rule = client.V1PolicyRule(
             api_groups=api_groups,
@@ -126,7 +110,7 @@ class CalrissianSession:
         body = client.V1Role(metadata=metadata, rules=[rule])
 
         try:
-            response = client.RbacAuthorizationV1Api(api_client).create_namespaced_role(
+            response = client.RbacAuthorizationV1Api(self.api_client).create_namespaced_role(
                 self.namespace, body, pretty=True
             )
             return response
@@ -138,13 +122,6 @@ class CalrissianSession:
                 raise e
 
     def _create_role_binding(self, name: str, role: str):
-
-        try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        api_client = client.ApiClient()
 
         metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
 
@@ -160,7 +137,7 @@ class CalrissianSession:
         body = client.V1RoleBinding(metadata=metadata, role_ref=role_ref, subjects=[subject])
 
         try:
-            response = client.RbacAuthorizationV1Api(api_client).create_namespaced_role_binding(
+            response = client.RbacAuthorizationV1Api(self.api_client).create_namespaced_role_binding(
                 self.namespace, body, pretty=True
             )
             return response
@@ -174,13 +151,6 @@ class CalrissianSession:
 
         if size is None:
             size = "25Gi"
-
-        try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        api_client = client.ApiClient()
 
         pvcs_definition = []
 
@@ -208,7 +178,7 @@ class CalrissianSession:
             body = client.V1PersistentVolumeClaim(metadata=metadata, spec=spec)
 
             try:
-                response = client.CoreV1Api(api_client).create_namespaced_persistent_volume_claim(
+                response = client.CoreV1Api(self.api_client).create_namespaced_persistent_volume_claim(
                     self.namespace, body, pretty=True
                 )
 
@@ -222,7 +192,7 @@ class CalrissianSession:
 
             while not created:
                 try:
-                    response = client.CoreV1Api(api_client).read_namespaced_persistent_volume_claim(
+                    response = client.CoreV1Api(self.api_client).read_namespaced_persistent_volume_claim(
                         name=pvc["name"], namespace=self.namespace
                     )
                     print(response)
@@ -233,11 +203,9 @@ class CalrissianSession:
 
     def _create_namespace(self, client):
 
-        api_client = client.ApiClient()
-
         try:
             body = client.V1Namespace(metadata=client.V1ObjectMeta(name=self.namespace))
-            response = client.CoreV1Api(api_client).create_namespace(body=body, async_req=False)
+            response = client.CoreV1Api(self.api_client).create_namespace(body=body, async_req=False)
             return response
         except ApiException as e:
             if e.status == 409:
@@ -251,14 +219,7 @@ class CalrissianSession:
     ):
 
         try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        api_client = client.ApiClient()
-
-        try:
-            return client.CoreV1Api(api_client).read_namespaced_config_map(
+            return self.client.CoreV1Api(self.api_client).read_namespaced_config_map(
                 namespace=self.namespace, name=name
             )
         except ApiException as e:
@@ -268,13 +229,6 @@ class CalrissianSession:
                 raise e
 
     def _create_secret(self, secret_name: str, cred_payload):
-
-        try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        api_client = client.ApiClient()
 
         self._delete_secret(namespace=self.namespace, secret_name=secret_name)
 
@@ -291,7 +245,9 @@ class CalrissianSession:
                 type="kubernetes.io/dockerconfigjson",
             )
 
-            client.CoreV1Api(api_client).create_namespaced_secret(namespace=self.namespace, body=secret)
+            client.CoreV1Api(self.api_client).create_namespaced_secret(
+                namespace=self.namespace, body=secret
+            )
 
         except ApiException as e:
             if e.status == 409:
@@ -302,14 +258,7 @@ class CalrissianSession:
     def _delete_secret(self, secret_name):
 
         try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
-
-        api_client = client.ApiClient()
-
-        try:
-            response = client.CoreV1Api(api_client).delete_namespaced_secret(
+            response = client.CoreV1Api(self.api_client).delete_namespaced_secret(
                 namespace=self.namespace, name=secret_name
             )
             print(response)
@@ -321,14 +270,8 @@ class CalrissianSession:
 
     def _patch_service_account(self, secret_name):
         # adds a secret to the namespace default service account
-        try:
-            config.load_incluster_config()  # raises if not in cluster
-        except ConfigException:
-            config.load_kube_config()  # for local debug/test purposes
 
-        api_client = client.ApiClient()
-
-        service_account_body = client.CoreV1Api(api_client).read_namespaced_service_account(
+        service_account_body = client.CoreV1Api(self.api_client).read_namespaced_service_account(
             name="default", namespace=self.namespace
         )
 
@@ -342,7 +285,7 @@ class CalrissianSession:
         service_account_body.image_pull_secrets.append({"name": secret_name})
 
         try:
-            client.CoreV1Api(api_client).patch_namespaced_service_account(
+            client.CoreV1Api(self.api_client).patch_namespaced_service_account(
                 name="default",
                 namespace=self.namespace,
                 body=service_account_body,
