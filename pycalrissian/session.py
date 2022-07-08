@@ -19,7 +19,15 @@ class CalrissianSession:
             "calrissian-output",
         ]
 
-    def delete_quota(self, quota_name):
+    def create(self):
+
+        self._create_namespace()
+
+    def dispose(self):
+
+        pass
+
+    def _delete_quota(self, quota_name):
 
         try:
             config.load_incluster_config()  # raises if not in cluster
@@ -39,7 +47,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def set_quota(self, resources):
+    def _set_quota(self, resources):
 
         quota_name = "user-quota"
 
@@ -66,7 +74,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def dispose_pvc(self):
+    def _dispose_pvc(self):
 
         try:
             config.load_incluster_config()  # raises if not in cluster
@@ -96,7 +104,7 @@ class CalrissianSession:
                     else:
                         raise e
 
-    def create_role(
+    def _create_role(
         self,
         client,
         name: str,
@@ -129,7 +137,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def create_role_binding(self, name: str, role: str):
+    def _create_role_binding(self, name: str, role: str):
 
         try:
             config.load_incluster_config()  # raises if not in cluster
@@ -162,7 +170,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def create_pvc(self, size):
+    def _create_pvc(self, size):
 
         if size is None:
             size = "25Gi"
@@ -223,7 +231,7 @@ class CalrissianSession:
                     if e.status == 404:
                         sleep(3)
 
-    def create_namespace(self, client):
+    def _create_namespace(self, client):
 
         api_client = client.ApiClient()
 
@@ -237,7 +245,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def get_configmap(
+    def _get_configmap(
         self,
         name: str,
     ):
@@ -259,7 +267,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def create_secret(self, secret_name: str, cred_payload):
+    def _create_secret(self, secret_name: str, cred_payload):
 
         try:
             config.load_incluster_config()  # raises if not in cluster
@@ -268,7 +276,7 @@ class CalrissianSession:
 
         api_client = client.ApiClient()
 
-        self.delete_secret(namespace=self.namespace, secret_name=secret_name)
+        self._delete_secret(namespace=self.namespace, secret_name=secret_name)
 
         data = {".dockerconfigjson": base64.b64encode(json.dumps(cred_payload).encode()).decode()}
 
@@ -291,7 +299,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def delete_secret(self, secret_name):
+    def _delete_secret(self, secret_name):
 
         try:
             config.load_incluster_config()  # raises if not in cluster
@@ -311,7 +319,7 @@ class CalrissianSession:
             else:
                 raise e
 
-    def patch_service_account(self, secret_name):
+    def _patch_service_account(self, secret_name):
         # adds a secret to the namespace default service account
         try:
             config.load_incluster_config()  # raises if not in cluster
