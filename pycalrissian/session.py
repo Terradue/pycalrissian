@@ -1,10 +1,13 @@
 import base64
 import json
+import logging
 from time import sleep
 
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from kubernetes.config.config_exception import ConfigException
+
+logging.basicConfig(level=logging.INFO)
 
 
 class CalrissianSession:
