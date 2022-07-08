@@ -1,0 +1,15 @@
+{
+	"name": "pycalrissian",
+
+	"build": {
+		"context": "..",
+		"dockerfile": "./Dockerfile"},
+	"settings": {
+		"python.pythonPath": "/opt/conda/envs/env_calrissian/bin/python"},
+	"extensions": [
+		"ms-python.python"
+	],
+	"remoteEnv": {
+		"PATH": "${containerEnv:PATH}:/opt/conda/envs/env_calrissian/bin"},
+	"postCreateCommand": "/opt/conda/envs/env_calrissian/bin/pre-commit install"
+}

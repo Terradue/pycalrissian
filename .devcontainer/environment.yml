@@ -1,0 +1,16 @@
+name: env_calrissian
+channels:
+  - terradue
+  - conda-forge
+dependencies:
+  - kubernetes
+  - click
+  - black
+  - pre-commit
+  - isort
+  - flake8
+  - autoflake
+  - pylint
+  - nose2
+  - cwltool
+  - pycountry
