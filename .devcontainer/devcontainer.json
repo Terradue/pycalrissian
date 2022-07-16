@@ -7,9 +7,14 @@
 	"settings": {
 		"python.pythonPath": "/opt/conda/envs/env_calrissian/bin/python"},
 	"extensions": [
-		"ms-python.python"
+		"ms-python.python",
+		"ms-kubernetes-tools.vscode-kubernetes-tools",
+		"redhat.vscode-yaml"
 	],
 	"remoteEnv": {
 		"PATH": "${containerEnv:PATH}:/opt/conda/envs/env_calrissian/bin"},
-	"postCreateCommand": "/opt/conda/envs/env_calrissian/bin/pre-commit install"
+	"postCreateCommand": "/opt/conda/envs/env_calrissian/bin/pre-commit install",
+	"mounts": [
+		"source=${localEnv:HOME}/.kube,target=/home/mambauser/.kube,type=bind"
+	  ]
 }
