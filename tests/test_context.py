@@ -1,6 +1,7 @@
 import os
 import unittest
 
+from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolumeClaim
 from kubernetes.client.models.v1_role import V1Role
 from kubernetes.client.models.v1_role_binding import V1RoleBinding
 from pycalrissian.context import CalrissianContext
@@ -101,6 +102,22 @@ class TestCalrissianContext(unittest.TestCase):
             session.create_namespace()
 
         session.create_roles()
+
+    def test_create_volume(self):
+
+        session = CalrissianContext(namespace=self.namespace)
+
+        if not session.is_namespace_created():
+            session.create_namespace()
+
+        response = session.create_pvc(
+            name="calrissian-wdir",
+            size="10G",
+            storage_class="microk8s-hostpath",
+            access_modes=["ReadWriteMany"],
+        )
+
+        self.assertIsInstance(response, V1PersistentVolumeClaim)
 
 
 #     def test_configmap_from_dict_as_yaml(self):

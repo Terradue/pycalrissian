@@ -120,6 +120,7 @@ class CalrissianContext(object):
                 read_methods[read_method](self.namespace)
                 created = True
         except ApiException as e:
+            print(e.status)
             if e.status == 404:
                 created = False
 
@@ -230,25 +231,28 @@ class CalrissianContext(object):
 
     def create_pvc(
         self,
-        pvc_definition,
+        name,
+        access_modes,
+        size,
+        storage_class,
     ):
 
-        if self.is_pvc_created(name=pvc_definition.name):
+        if self.is_pvc_created(name=name):
 
             return self.core_v1_api.read_namespaced_persistent_volume_claim(
-                name=pvc_definition.name, namespace=self.namespace
+                name=name, namespace=self.namespace
             )
 
         else:
 
-            metadata = client.V1ObjectMeta(name=pvc_definition.name, namespace=self.namespace)
+            metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
 
             spec = client.V1PersistentVolumeClaimSpec(
-                access_modes=pvc_definition.access_modes,
-                resources=client.V1ResourceRequirements(requests={"storage": pvc_definition.size}),
+                access_modes=access_modes,
+                resources=client.V1ResourceRequirements(requests={"storage": size}),
             )
 
-            spec.storage_class_name = pvc_definition.storage_class
+            spec.storage_class_name = storage_class
 
             body = client.V1PersistentVolumeClaim(metadata=metadata, spec=spec)
 
