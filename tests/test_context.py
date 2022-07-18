@@ -9,6 +9,7 @@ from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolu
 from kubernetes.client.models.v1_role import V1Role
 from kubernetes.client.models.v1_role_binding import V1RoleBinding
 from kubernetes.client.models.v1_secret import V1Secret
+
 from pycalrissian.context import CalrissianContext
 
 os.environ["KUBECONFIG"] = "/home/mambauser/.kube/microk8s.config"
@@ -25,19 +26,25 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_core_v1_api(self):
 
-        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
+        session = CalrissianContext(
+            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+        )
 
         self.assertIsNotNone(session.core_v1_api)
 
     def test_rbac_authorization_v1_api(self):
 
-        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
+        session = CalrissianContext(
+            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+        )
 
         self.assertIsNotNone(session.rbac_authorization_v1_api)
 
     def test_create_namespace(self):
 
-        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
+        session = CalrissianContext(
+            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+        )
 
         # if session.is_namespace_created():
         #     session.core_v1_api.delete_namespace(
@@ -49,7 +56,9 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_create_role_1(self):
 
-        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
+        session = CalrissianContext(
+            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+        )
 
         if not session.is_namespace_created():
             session.create_namespace()
@@ -74,7 +83,9 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_create_role_binding_1(self):
 
-        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
+        session = CalrissianContext(
+            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+        )
 
         if not session.is_namespace_created():
             session.create_namespace()
@@ -95,13 +106,17 @@ class TestCalrissianContext(unittest.TestCase):
             api_groups=["*"],
         )
 
-        response = session.create_role_binding(name=roles[role_name]["role_binding"], role=role_name)
+        response = session.create_role_binding(
+            name=roles[role_name]["role_binding"], role=role_name
+        )
 
         self.assertIsInstance(response, V1RoleBinding)
 
     def test_create_roles(self):
 
-        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
+        session = CalrissianContext(
+            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+        )
 
         if not session.is_namespace_created():
             session.create_namespace()
@@ -149,7 +164,9 @@ class TestCalrissianContext(unittest.TestCase):
         data["key3"] = "value3"
 
         response = session.create_configmap(
-            name="cm-id-yml-cwl", key="from_dict_as_yaml", content=yaml.dump(data)
+            name="cm-id-yml-cwl",
+            key="from_dict_as_yaml",
+            content=yaml.dump(data),
         )
 
         self.assertIsInstance(response, V1ConfigMap)
@@ -172,7 +189,9 @@ class TestCalrissianContext(unittest.TestCase):
         data["key3"] = "value3"
 
         response = session.create_configmap(
-            name="cm-id-json", key="from_dict", content=json.dumps(data, indent=4)
+            name="cm-id-json",
+            key="from_dict",
+            content=json.dumps(data, indent=4),
         )
 
         self.assertIsInstance(response, V1ConfigMap)
@@ -184,7 +203,9 @@ class TestCalrissianContext(unittest.TestCase):
         email = "john.doe@me.com"
         registry = "1ui32139.gra7.container-registry.ovh.net"
 
-        auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("utf-8")
+        auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
+            "utf-8"
+        )
 
         secret_config = {
             "auths": {

@@ -79,7 +79,7 @@ class CalrissianContext(object):
 
             self.create_image_pull_secret(self.secret_name)
 
-            self.patch_service_account()
+            # self.patch_service_account()
 
     def dispose(self):
 
@@ -145,20 +145,24 @@ class CalrissianContext(object):
         read_methods = {}
 
         read_methods["read_namespace"] = self.core_v1_api.read_namespace
-        # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/RbacAuthorizationV1Api.md#read_namespaced_role
-        read_methods["read_namespaced_role"] = self.rbac_authorization_v1_api.read_namespaced_role
-        # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/RbacAuthorizationV1Api.md#replace_namespaced_role_binding
+        read_methods[
+            "read_namespaced_role"
+        ] = self.rbac_authorization_v1_api.read_namespaced_role  # noqa: E501
         read_methods[
             "read_namespaced_role_binding"
-        ] = self.rbac_authorization_v1_api.read_namespaced_role_binding
+        ] = self.rbac_authorization_v1_api.read_namespaced_role_binding  # noqa: E501
 
-        read_methods["read_namespaced_config_map"] = self.core_v1_api.read_namespaced_config_map
+        read_methods[
+            "read_namespaced_config_map"
+        ] = self.core_v1_api.read_namespaced_config_map  # noqa: E501
 
         read_methods[
             "read_namespaced_persistent_volume_claim"
-        ] = self.core_v1_api.read_namespaced_persistent_volume_claim
+        ] = self.core_v1_api.read_namespaced_persistent_volume_claim  # noqa: E501
 
-        read_methods["read_namespaced_secret"] = self.core_v1_api.read_namespaced_secret
+        read_methods[
+            "read_namespaced_secret"
+        ] = self.core_v1_api.read_namespaced_secret  # noqa: E501
 
         created = False
 
@@ -201,7 +205,9 @@ class CalrissianContext(object):
 
     def is_pvc_created(self, **kwargs) -> bool:
 
-        return self.is_object_created("read_namespaced_persistent_volume_claim", **kwargs)
+        return self.is_object_created(
+            "read_namespaced_persistent_volume_claim", **kwargs
+        )  # noqa: E501
 
     def is_image_pull_secret_created(self, **kwargs) -> bool:
 
@@ -217,9 +223,13 @@ class CalrissianContext(object):
 
             try:
                 body = client.V1Namespace(
-                    metadata=client.V1ObjectMeta(name=self.namespace, labels=job_labels)
+                    metadata=client.V1ObjectMeta(
+                        name=self.namespace, labels=job_labels
+                    )  # noqa: E501
                 )
-                response = self.core_v1_api.create_namespace(body=body, async_req=False)
+                response = self.core_v1_api.create_namespace(
+                    body=body, async_req=False
+                )  # noqa: E501
                 return response
             except ApiException as e:
                 raise e
@@ -250,8 +260,10 @@ class CalrissianContext(object):
             body = client.V1Role(metadata=metadata, rules=[rule])
 
             try:
-                response = self.rbac_authorization_v1_api.create_namespaced_role(
-                    self.namespace, body, pretty=True
+                response = (
+                    self.rbac_authorization_v1_api.create_namespaced_role(  # noqa: E501
+                        self.namespace, body, pretty=True
+                    )
                 )
                 return response
 
@@ -279,10 +291,12 @@ class CalrissianContext(object):
                 namespace=self.namespace,
             )
 
-            body = client.V1RoleBinding(metadata=metadata, role_ref=role_ref, subjects=[subject])
+            body = client.V1RoleBinding(
+                metadata=metadata, role_ref=role_ref, subjects=[subject]
+            )  # noqa: E501
 
             try:
-                response = self.rbac_authorization_v1_api.create_namespaced_role_binding(
+                response = self.rbac_authorization_v1_api.create_namespaced_role_binding(  # noqa: E501
                     self.namespace, body, pretty=True
                 )
                 return response
@@ -310,7 +324,9 @@ class CalrissianContext(object):
 
             spec = client.V1PersistentVolumeClaimSpec(
                 access_modes=access_modes,
-                resources=client.V1ResourceRequirements(requests={"storage": size}),
+                resources=client.V1ResourceRequirements(
+                    requests={"storage": size}
+                ),  # noqa: E501
             )
 
             spec.storage_class_name = storage_class
@@ -318,7 +334,7 @@ class CalrissianContext(object):
             body = client.V1PersistentVolumeClaim(metadata=metadata, spec=spec)
 
             try:
-                response = self.core_v1_api.create_namespaced_persistent_volume_claim(
+                response = self.core_v1_api.create_namespaced_persistent_volume_claim(  # noqa: E501
                     self.namespace, body, pretty=True
                 )
                 return response
@@ -348,7 +364,9 @@ class CalrissianContext(object):
 
         if self.is_config_map_created(name=name):
 
-            return self.core_v1_api.read_namespaced_config_map(namespace=self.namespace, name=name)
+            return self.core_v1_api.read_namespaced_config_map(
+                namespace=self.namespace, name=name
+            )  # noqa: E501
 
         else:
 
@@ -388,7 +406,9 @@ class CalrissianContext(object):
 
         if self.is_image_pull_secret_created(name=name):
 
-            return self.core_v1_api.read_namespaced_secret(namespace=self.namespace, name=name)
+            return self.core_v1_api.read_namespaced_secret(
+                namespace=self.namespace, name=name
+            )  # noqa: E501
 
         else:
 
@@ -433,7 +453,9 @@ class CalrissianContext(object):
             service_account_body.image_pull_secrets = []
 
         service_account_body.secrets.append({"name": self.secret_name})
-        service_account_body.image_pull_secrets.append({"name": self.secret_name})
+        service_account_body.image_pull_secrets.append(
+            {"name": self.secret_name}
+        )  # noqa: E501
 
         try:
             self.core_v1_api.patch_namespaced_service_account(

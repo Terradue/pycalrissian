@@ -2,17 +2,20 @@ import base64
 import os
 import unittest
 
+from kubernetes.client.models.v1_job import V1Job
+
 from pycalrissian.context import CalrissianContext
+from pycalrissian.job import CalrissianJob
 
 os.environ["KUBECONFIG"] = "/home/mambauser/.kube/microk8s.config"
 
 
-class TestCalrissianContext(unittest.TestCase):
+class TestCalrissianJob(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.namespace = "e2e-namespace"
+        cls.namespace = "job-namespace"
 
-    def test_e2e(self):
+    def test_job(self):
 
         username = "pippo"
         password = "pippo"
@@ -42,3 +45,12 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         session.initialise()
+
+        cwl = {}
+        params = {}
+
+        job = CalrissianJob(cwl=cwl, params=params, runtime_context=session)
+
+        print(dir(job.to_k8s_job()))
+        job.to_yaml("job.yml")
+        self.assertIsInstance(job.to_k8s_job(), V1Job)

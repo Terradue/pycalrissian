@@ -25,23 +25,25 @@ repos:
     hooks:
       - id: flake8
         args:
-          - --max-line-length=105
+          - --max-line-length=88
           - --max-doc-length=90
-          - --ignore=E203,W503
+          - --ignore=E203,W503,W505
   - repo: https://github.com/psf/black
     rev: 22.3.0
     hooks:
       - id: black
         args:
-          - --line-length=105
-          - .
+          - --line-length=88
+          - pycalrissian
+          - tests
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:
       - id: isort
         args:
-          - --line-length=105
-          - --src=snapping
+          - --line-length=88
+          - --src=pycalrissian
+          - --profile black
   # - repo: local
   #   hooks:
   #   -   id: pylint

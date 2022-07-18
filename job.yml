@@ -1,0 +1,329 @@
+api_version: batch/v1
+kind: Job
+metadata:
+  annotations: null
+  cluster_name: null
+  creation_timestamp: null
+  deletion_grace_period_seconds: null
+  deletion_timestamp: null
+  finalizers: null
+  generate_name: null
+  generation: null
+  labels:
+    job_name: job-name
+  managed_fields: null
+  name: job-name
+  namespace: null
+  owner_references: null
+  resource_version: null
+  self_link: null
+  uid: null
+spec:
+  active_deadline_seconds: null
+  backoff_limit: 0
+  completion_mode: null
+  completions: null
+  manual_selector: null
+  parallelism: null
+  selector: null
+  suspend: null
+  template:
+    metadata:
+      annotations: null
+      cluster_name: null
+      creation_timestamp: null
+      deletion_grace_period_seconds: null
+      deletion_timestamp: null
+      finalizers: null
+      generate_name: null
+      generation: null
+      labels:
+        pod_name: calrissian_pod
+      managed_fields: null
+      name: calrissian_pod
+      namespace: null
+      owner_references: null
+      resource_version: null
+      self_link: null
+      uid: null
+    spec:
+      active_deadline_seconds: null
+      affinity: null
+      automount_service_account_token: null
+      containers:
+      - args:
+        - --stdout
+        - path to stdout
+        - --stderr
+        - path to stderr
+        - --usage-report
+        - path to usage_report
+        - --max-ram
+        - max_ram
+        - --max-cores
+        - '{{max_cores}}'
+        - --tmp-outdir-prefix
+        - '{{tmp_outdir_prefix}}'
+        - --pod-env-vars
+        - '{{pod_env_vars_path}}'
+        - --pod-nodeselectors
+        - '{{pod_nodeselectors_path}}'
+        - --debug
+        - --no-read-only
+        - --outdir
+        - '{{outdir}}'
+        - /workflow/workflow.cwl
+        - /workflow/params.yml
+        command:
+        - calrissian
+        env:
+        - name: CALRISSIAN_POD_NAME
+          value: null
+          value_from:
+            config_map_key_ref: null
+            field_ref:
+              api_version: null
+              field_path: metadata.name
+            resource_field_ref: null
+            secret_key_ref: null
+        env_from: null
+        image: terradue/calrissian:0.11.0-sprint1
+        image_pull_policy: Always
+        lifecycle: null
+        liveness_probe: null
+        name: calrissian
+        ports: null
+        readiness_probe: null
+        resources: null
+        security_context: null
+        startup_probe: null
+        stdin: null
+        stdin_once: null
+        termination_message_path: null
+        termination_message_policy: null
+        tty: null
+        volume_devices: null
+        volume_mounts:
+        - mount_path: /workflow/workflow.cwl
+          mount_propagation: null
+          name: cwl-workflow
+          read_only: null
+          sub_path: null
+          sub_path_expr: null
+        - mount_path: /workflow/params.yml
+          mount_propagation: null
+          name: parameters
+          read_only: null
+          sub_path: null
+          sub_path_expr: null
+        - mount_path: /calrissian
+          mount_propagation: null
+          name: calrissian-wdir
+          read_only: null
+          sub_path: null
+          sub_path_expr: null
+        working_dir: null
+      - args:
+        - while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}')
+          ]; do sleep 5; done; [ -f {{usage_report}} ] && cat {{usage_report}}
+        command:
+        - sh
+        - -c
+        env: []
+        env_from: null
+        image: bitnami/kubectl
+        image_pull_policy: Always
+        lifecycle: null
+        liveness_probe: null
+        name: sidecar-container-usage
+        ports: null
+        readiness_probe: null
+        resources: null
+        security_context: null
+        startup_probe: null
+        stdin: null
+        stdin_once: null
+        termination_message_path: null
+        termination_message_policy: null
+        tty: null
+        volume_devices: null
+        volume_mounts:
+        - mount_path: /calrissian
+          mount_propagation: null
+          name: calrissian-wdir
+          read_only: null
+          sub_path: null
+          sub_path_expr: null
+        working_dir: null
+      - args:
+        - while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}')
+          ]; do sleep 5; done; [ -f {{stdout}} ] && cat {{stdout}}
+        command:
+        - sh
+        - -c
+        env: []
+        env_from: null
+        image: bitnami/kubectl
+        image_pull_policy: Always
+        lifecycle: null
+        liveness_probe: null
+        name: sidecar-container-output
+        ports: null
+        readiness_probe: null
+        resources: null
+        security_context: null
+        startup_probe: null
+        stdin: null
+        stdin_once: null
+        termination_message_path: null
+        termination_message_policy: null
+        tty: null
+        volume_devices: null
+        volume_mounts:
+        - mount_path: /calrissian
+          mount_propagation: null
+          name: calrissian-wdir
+          read_only: null
+          sub_path: null
+          sub_path_expr: null
+        working_dir: null
+      dns_config: null
+      dns_policy: null
+      enable_service_links: null
+      ephemeral_containers: null
+      host_aliases: null
+      host_ipc: null
+      host_network: null
+      host_pid: null
+      hostname: null
+      image_pull_secrets: null
+      init_containers: null
+      node_name: null
+      node_selector: null
+      os: null
+      overhead: null
+      preemption_policy: null
+      priority: null
+      priority_class_name: null
+      readiness_gates: null
+      restart_policy: Never
+      runtime_class_name: null
+      scheduler_name: null
+      security_context: null
+      service_account: null
+      service_account_name: null
+      set_hostname_as_fqdn: null
+      share_process_namespace: null
+      subdomain: null
+      termination_grace_period_seconds: null
+      tolerations: null
+      topology_spread_constraints: null
+      volumes:
+      - aws_elastic_block_store: null
+        azure_disk: null
+        azure_file: null
+        cephfs: null
+        cinder: null
+        config_map:
+          default_mode: null
+          items:
+          - key: cwl-workflow
+            mode: null
+            path: workflow.cwl
+          name: cwl-volume
+          optional: false
+        csi: null
+        downward_api: null
+        empty_dir: null
+        ephemeral: null
+        fc: null
+        flex_volume: null
+        flocker: null
+        gce_persistent_disk: null
+        git_repo: null
+        glusterfs: null
+        host_path: null
+        iscsi: null
+        name: cwl-workflow
+        nfs: null
+        persistent_volume_claim: null
+        photon_persistent_disk: null
+        portworx_volume: null
+        projected: null
+        quobyte: null
+        rbd: null
+        scale_io: null
+        secret: null
+        storageos: null
+        vsphere_volume: null
+      - aws_elastic_block_store: null
+        azure_disk: null
+        azure_file: null
+        cephfs: null
+        cinder: null
+        config_map:
+          default_mode: null
+          items:
+          - key: parameters
+            mode: null
+            path: params.yml
+          name: params-volume
+          optional: false
+        csi: null
+        downward_api: null
+        empty_dir: null
+        ephemeral: null
+        fc: null
+        flex_volume: null
+        flocker: null
+        gce_persistent_disk: null
+        git_repo: null
+        glusterfs: null
+        host_path: null
+        iscsi: null
+        name: params
+        nfs: null
+        persistent_volume_claim: null
+        photon_persistent_disk: null
+        portworx_volume: null
+        projected: null
+        quobyte: null
+        rbd: null
+        scale_io: null
+        secret: null
+        storageos: null
+        vsphere_volume: null
+      - aws_elastic_block_store: null
+        azure_disk: null
+        azure_file: null
+        cephfs: null
+        cinder: null
+        config_map: null
+        csi: null
+        downward_api: null
+        empty_dir: null
+        ephemeral: null
+        fc: null
+        flex_volume: null
+        flocker: null
+        gce_persistent_disk: null
+        git_repo: null
+        glusterfs: null
+        host_path: null
+        iscsi: null
+        name: calrissian-wdir
+        nfs: null
+        persistent_volume_claim:
+          claim_name: calrissian-wdir
+          read_only: null
+        photon_persistent_disk: null
+        portworx_volume: null
+        projected: null
+        quobyte: null
+        rbd: null
+        scale_io: null
+        secret: null
+        storageos: null
+        vsphere_volume: null
+  ttl_seconds_after_finished: null
+status: null
