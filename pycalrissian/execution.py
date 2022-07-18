@@ -4,6 +4,7 @@ from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.rest import ApiException
 
 from pycalrissian.context import CalrissianContext
+from pycalrissian.job import ContainerNames
 
 
 class JobStatus(Enum):
@@ -69,17 +70,17 @@ class JobExecution(object):
     def get_output(self):
         """Returns the job output"""
         if self.is_succeeded:
-            return self.get_container_log("sidecar-container-output")
+            return self.get_container_log(ContainerNames.SIDECAR_OUTPUT)
 
     def get_log(self):
         """Returns the job execution log"""
         if self.is_succeeded:
-            return self.get_container_log("calrissian")
+            return self.get_container_log(ContainerNames.CALRISSIAN)
 
     def get_usage_report(self):
         """Returns the job usage report"""
         if self.is_succeeded:
-            return self.get_container_log("sidecar-container-usage")
+            return self.get_container_log(ContainerNames.SIDECAR_USAGE)
 
     def get_container_log(self, container):
 
@@ -90,9 +91,10 @@ class JobExecution(object):
                     namespace=self.runtime_context.namespace,
                     pretty=True,
                 )
-                controller_uid = response.metadata.labels["controller-uid"]
 
-                pod_label_selector = "controller-uid=" + controller_uid
+                pod_label_selector = (
+                    "controller-uid=" + response.metadata.labels["controller-uid"]
+                )
                 pods_list = self.runtime_context.core_v1_api.list_namespaced_pod(
                     namespace=self.runtime_context.namespace,
                     label_selector=pod_label_selector,

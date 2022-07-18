@@ -1,11 +1,18 @@
 import json
 import os
+from enum import Enum
 from typing import Dict
 
 import yaml
 from kubernetes import client
 
 from pycalrissian.context import CalrissianContext
+
+
+class ContainerNames(Enum):
+    CALRISSIAN = "calrissian"
+    SIDECAR_USAGE = "sidecar-container-usage"
+    SIDECAR_OUTPUT = "sidecar-container-output"
 
 
 class CalrissianJob(object):
@@ -134,7 +141,7 @@ class CalrissianJob(object):
         )
 
         container_1 = self.create_container(
-            name="calrissian",
+            name=ContainerNames.CALRISSIAN,
             image="terradue/calrissian:0.11.0-sprint1",
             command=["calrissian"],
             args=[
@@ -166,7 +173,7 @@ class CalrissianJob(object):
         )
 
         container_2 = self.create_container(
-            name="sidecar-container-usage",
+            name=ContainerNames.SIDECAR_USAGE,
             image="bitnami/kubectl",
             command=["sh", "-c"],
             args=[
@@ -177,7 +184,7 @@ class CalrissianJob(object):
         )
 
         container_3 = self.create_container(
-            name="sidecar-container-output",
+            name=ContainerNames.SIDECAR_OUTPUT,
             image="bitnami/kubectl",
             command=["sh", "-c"],
             args=[
