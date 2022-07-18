@@ -38,7 +38,7 @@ class CalrissianContext(object):
 
         pass
 
-    def tear_down(self):
+    def discard(self):
         pass
 
     def get_tmp_dir(self):
