@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import unittest
@@ -7,6 +8,7 @@ from kubernetes.client.models.v1_config_map import V1ConfigMap
 from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolumeClaim
 from kubernetes.client.models.v1_role import V1Role
 from kubernetes.client.models.v1_role_binding import V1RoleBinding
+from kubernetes.client.models.v1_secret import V1Secret
 from pycalrissian.context import CalrissianContext
 
 os.environ["KUBECONFIG"] = "/home/mambauser/.kube/microk8s.config"
@@ -174,6 +176,40 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsInstance(response, V1ConfigMap)
+
+    def test_secret_creation(self):
+
+        username = "pippo"
+        password = "pippo"
+        email = "john.doe@me.com"
+        registry = "1ui32139.gra7.container-registry.ovh.net"
+
+        auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("utf-8")
+
+        secret_config = {
+            "auths": {
+                registry: {
+                    "username": username,
+                    "password": password,
+                    "email": email,
+                    "auth": auth,
+                }
+            }
+        }
+
+        session = CalrissianContext(
+            namespace=self.namespace,
+            storage_class="microk8s-hostpath",
+            volume_size="1G",
+            image_pull_secrets=secret_config,
+        )
+
+        if not session.is_namespace_created():
+            session.create_namespace()
+
+        response = session.create_image_pull_secret(name="container-rg")
+
+        self.assertIsInstance(response, V1Secret)
 
 
 # # if __name__ == "__main__":

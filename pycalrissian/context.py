@@ -1,8 +1,11 @@
+import base64
+import json
 import os
 from typing import Dict, TextIO
 
 from kubernetes import client, config
 from kubernetes.client import Configuration
+from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolumeClaim
 from kubernetes.client.rest import ApiException
 
 
@@ -12,29 +15,85 @@ class CalrissianContext(object):
         namespace: str,
         storage_class: str,
         volume_size: str,
+        image_pull_secrets: Dict = None,
         kubeconfig_file: TextIO = None,
     ):
 
         self.kubeconfig_file = kubeconfig_file
 
         self.api_client = self._get_api_client(self.kubeconfig_file)
-
         self.core_v1_api = self._get_core_v1_api()
-
-        self.batch_v1_api = self._get_batch_v1_api()  # BatchV1Api
-
+        self.batch_v1_api = self._get_batch_v1_api()
         self.rbac_authorization_v1_api = self._get_rbac_authorization_v1_api()
 
         self.namespace = namespace
         self.storage_class = storage_class
         self.volume_size = volume_size
 
+        self.image_pull_secrets = image_pull_secrets
+        self.secret_name = "container-rg"
+
     def initialise(self):
 
-        pass
+        # create namespace
+        if not self.is_namespace_created():
+            self.create_namespace()
 
-    def discard(self):
-        pass
+        # create roles and role binding
+        roles = {}
+
+        roles["pod-manager-role"] = {
+            "verbs": ["create", "patch", "delete", "list", "watch"],
+            "role_binding": "pod-manager-default-binding",
+        }
+
+        roles["log-reader-role"] = {
+            "verbs": ["get", "list"],
+            "role_binding": "log-reader-default-binding",
+        }
+
+        for key, value in roles.items():
+            response = self.create_role(
+                name=key,
+                verbs=value["verbs"],
+                resources=["pods", "pods/log"],
+                api_groups=["*"],
+            )
+            # print(type(response))
+            # assert(isinstance(response, V1Role))
+
+            self.create_role_binding(name=value["role_binding"], role=key)
+            # assert(isinstance(response, V1RoleBinding))
+
+        # create volumes
+        response = self.create_pvc(
+            name="calrissian-wdir",
+            size=self.volume_size,
+            storage_class=self.storage_class,
+            access_modes=["ReadWriteMany"],
+        )
+
+        assert isinstance(response, V1PersistentVolumeClaim)
+
+        if self.image_pull_secrets:
+
+            self.create_image_pull_secret(self.secret_name)
+
+            self.patch_service_account()
+
+    def dispose(self):
+
+        # TODO
+        # Add delete for the pods
+
+        try:
+            response = self.core_v1_api.delete_namespace(
+                name=self.namespace, pretty=True, grace_period_seconds=0
+            )
+            return response
+
+        except ApiException as e:
+            raise e
 
     def get_tmp_dir(self):
         """Returns the tmp directory path"""
@@ -99,6 +158,8 @@ class CalrissianContext(object):
             "read_namespaced_persistent_volume_claim"
         ] = self.core_v1_api.read_namespaced_persistent_volume_claim
 
+        read_methods["read_namespaced_secret"] = self.core_v1_api.read_namespaced_secret
+
         created = False
 
         try:
@@ -108,6 +169,7 @@ class CalrissianContext(object):
                 "read_namespaced_role",
                 "read_namespaced_role_binding",
                 "read_namespaced_persistent_volume_claim",
+                "read_namespaced_secret",
             ]:
                 read_methods[read_method](namespace=self.namespace, **kwargs)
                 created = True
@@ -140,6 +202,10 @@ class CalrissianContext(object):
     def is_pvc_created(self, **kwargs) -> bool:
 
         return self.is_object_created("read_namespaced_persistent_volume_claim", **kwargs)
+
+    def is_image_pull_secret_created(self, **kwargs) -> bool:
+
+        return self.is_object_created("read_namespaced_secret", **kwargs)
 
     def create_namespace(self, job_labels: dict = None) -> client.V1Namespace:
 
@@ -260,16 +326,16 @@ class CalrissianContext(object):
 
                 raise e
 
-    def dispose(self) -> client.V1Status:
-        try:
+    # def dispose(self) -> client.V1Status:
+    #     try:
 
-            response = self.core_v1_api.delete_namespace(
-                name=self.namespace, pretty=True, grace_period_seconds=0
-            )
-            return response
+    #         response = self.core_v1_api.delete_namespace(
+    #             name=self.namespace, pretty=True, grace_period_seconds=0
+    #         )
+    #         return response
 
-        except ApiException as e:
-            raise e
+    #     except ApiException as e:
+    #         raise e
 
     def create_configmap(
         self,
@@ -315,26 +381,90 @@ class CalrissianContext(object):
             except ApiException as e:
                 raise e
 
-    def create_roles(self):
+    def create_image_pull_secret(
+        self,
+        name,
+    ):
 
-        roles = {}
+        if self.is_image_pull_secret_created(name=name):
 
-        roles["pod-manager-role"] = {
-            "verbs": ["create", "patch", "delete", "list", "watch"],
-            "role_binding": "pod-manager-default-binding",
-        }
+            return self.core_v1_api.read_namespaced_secret(namespace=self.namespace, name=name)
 
-        roles["log-reader-role"] = {
-            "verbs": ["get", "list"],
-            "role_binding": "log-reader-default-binding",
-        }
+        else:
 
-        for role, value in roles.items():
+            metadata = {"name": name, "namespace": self.namespace}
 
-            self.create_role(
-                name=role,
-                verbs=value["verbs"],
-                resources=["pods", "pods/log"],
-                api_groups=["*"],
+            data = {
+                ".dockerconfigjson": base64.b64encode(
+                    json.dumps(self.image_pull_secrets).encode()
+                ).decode()
+            }
+
+            secret = client.V1Secret(
+                api_version="v1",
+                data=data,
+                kind="Secret",
+                metadata=metadata,
+                type="kubernetes.io/dockerconfigjson",
             )
-            self.create_role_binding(name=value["role_binding"], role=role)
+
+            try:
+                response = self.core_v1_api.create_namespaced_secret(
+                    namespace=self.namespace,
+                    body=secret,
+                    pretty=True,
+                )
+                return response
+
+            except ApiException as e:
+                raise e
+
+    def patch_service_account(self):
+        # adds a secret to the namespace default service account
+
+        service_account_body = self.core_v1_api.read_namespaced_service_account(
+            name="default", namespace=self.namespace
+        )
+
+        if service_account_body.secrets is None:
+            service_account_body.secrets = []
+
+        if service_account_body.image_pull_secrets is None:
+            service_account_body.image_pull_secrets = []
+
+        service_account_body.secrets.append({"name": self.secret_name})
+        service_account_body.image_pull_secrets.append({"name": self.secret_name})
+
+        try:
+            self.core_v1_api.patch_namespaced_service_account(
+                name="default",
+                namespace=self.namespace,
+                body=service_account_body,
+                pretty=True,
+            )
+        except ApiException as e:
+            raise e
+
+    # def create_roles(self):
+
+    #     roles = {}
+
+    #     roles["pod-manager-role"] = {
+    #         "verbs": ["create", "patch", "delete", "list", "watch"],
+    #         "role_binding": "pod-manager-default-binding",
+    #     }
+
+    #     roles["log-reader-role"] = {
+    #         "verbs": ["get", "list"],
+    #         "role_binding": "log-reader-default-binding",
+    #     }
+
+    #     for role, value in roles.items():
+
+    #         self.create_role(
+    #             name=role,
+    #             verbs=value["verbs"],
+    #             resources=["pods", "pods/log"],
+    #             api_groups=["*"],
+    #         )
+    #         self.create_role_binding(name=value["role_binding"], role=role)
