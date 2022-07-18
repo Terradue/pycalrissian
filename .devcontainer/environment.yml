@@ -12,6 +12,6 @@ dependencies:
   - pylint
   - nose2
   - cwltool
-  - pyyma
+  - pyyaml
   - pip:
     - kubernetes
