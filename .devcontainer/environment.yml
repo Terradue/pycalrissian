@@ -3,7 +3,6 @@ channels:
   - terradue
   - conda-forge
 dependencies:
-  - kubernetes
   - click
   - black
   - pre-commit
@@ -14,3 +13,5 @@ dependencies:
   - nose2
   - cwltool
   - pycountry
+  - pip:
+    - kubernetes
