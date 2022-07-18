@@ -1,5 +1,5 @@
 import os
-from typing import Dict, TextIO
+from typing import TextIO
 
 from kubernetes import client, config
 from kubernetes.client import Configuration
@@ -10,14 +10,8 @@ class CalrissianContext(object):
     def __init__(
         self,
         namespace,
-        pod_env_vars: Dict = None,
-        pod_node_selector: Dict = None,
-        max_ram: int = 8,
-        max_cores: int = 16,
-        security_context: Dict = None,
-        storage_class: str = None,
-        debug=False,
-        no_read_only=False,
+        storage_class,
+        volume_size,
         kubeconfig_file: TextIO = None,
     ):
 
@@ -32,7 +26,8 @@ class CalrissianContext(object):
         self.rbac_authorization_v1_api = self._get_rbac_authorization_v1_api()
 
         self.namespace = namespace
-        self.pod_env_vars = pod_env_vars
+        self.storage_class = storage_class
+        self.volume_size = volume_size
 
     def initialise(self):
 

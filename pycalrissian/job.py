@@ -1,5 +1,21 @@
+from typing import Dict
+
+
 class CalrissianJob(object):
-    def __init__(self, cwl, params, runtime_context):
+    def __init__(
+        self,
+        cwl,
+        params,
+        runtime_context,
+        pod_env_vars: Dict = None,
+        pod_node_selector: Dict = None,
+        max_ram: int = 8,
+        max_cores: int = 16,
+        security_context: Dict = None,
+        storage_class: str = None,
+        debug=False,
+        no_read_only=False,
+    ):
 
         self.cwl = cwl
         self.params = params
