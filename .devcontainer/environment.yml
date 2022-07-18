@@ -12,6 +12,6 @@ dependencies:
   - pylint
   - nose2
   - cwltool
-  - pycountry
+  - pyyma
   - pip:
     - kubernetes

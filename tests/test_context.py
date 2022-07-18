@@ -1,6 +1,9 @@
+import json
 import os
 import unittest
 
+import yaml
+from kubernetes.client.models.v1_config_map import V1ConfigMap
 from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolumeClaim
 from kubernetes.client.models.v1_role import V1Role
 from kubernetes.client.models.v1_role_binding import V1RoleBinding
@@ -20,19 +23,19 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_core_v1_api(self):
 
-        session = CalrissianContext(namespace=self.namespace)
+        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
 
         self.assertIsNotNone(session.core_v1_api)
 
     def test_rbac_authorization_v1_api(self):
 
-        session = CalrissianContext(namespace=self.namespace)
+        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
 
         self.assertIsNotNone(session.rbac_authorization_v1_api)
 
     def test_create_namespace(self):
 
-        session = CalrissianContext(namespace=self.namespace)
+        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
 
         # if session.is_namespace_created():
         #     session.core_v1_api.delete_namespace(
@@ -44,7 +47,7 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_create_role_1(self):
 
-        session = CalrissianContext(namespace=self.namespace)
+        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
 
         if not session.is_namespace_created():
             session.create_namespace()
@@ -69,7 +72,7 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_create_role_binding_1(self):
 
-        session = CalrissianContext(namespace=self.namespace)
+        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
 
         if not session.is_namespace_created():
             session.create_namespace()
@@ -96,7 +99,7 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_create_roles(self):
 
-        session = CalrissianContext(namespace=self.namespace)
+        session = CalrissianContext(namespace=self.namespace, storage_class="dummy", volume_size="1G")
 
         if not session.is_namespace_created():
             session.create_namespace()
@@ -105,69 +108,72 @@ class TestCalrissianContext(unittest.TestCase):
 
     def test_create_volume(self):
 
-        session = CalrissianContext(namespace=self.namespace)
+        session = CalrissianContext(
+            namespace=self.namespace,
+            storage_class="microk8s-hostpath",
+            volume_size="1G",
+        )
 
         if not session.is_namespace_created():
             session.create_namespace()
 
         response = session.create_pvc(
             name="calrissian-wdir",
-            size="10G",
-            storage_class="microk8s-hostpath",
+            size=session.volume_size,
+            storage_class=session.storage_class,
             access_modes=["ReadWriteMany"],
         )
 
         self.assertIsInstance(response, V1PersistentVolumeClaim)
 
+    def test_configmap_from_dict_as_yaml(self):
 
-#     def test_configmap_from_dict_as_yaml(self):
+        session = CalrissianContext(
+            namespace=self.namespace,
+            storage_class="microk8s-hostpath",
+            volume_size="1G",
+        )
 
-#         ns_configmap = "ns-config-map-1"
+        if not session.is_namespace_created():
+            session.create_namespace()
 
-#         session = CalrissianContext(namespace=ns_configmap)
+        data = {}
 
-#         if not session.is_namespace_created():
-#             session.create_namespace()
+        data["cwlVersion"] = "v1.0"
+        data["$graph"] = [
+            {"class": "Workflow", "id": "my_id"},
+            {"class": "CommandLineTool", "id": "my_id"},
+        ]
+        data["key3"] = "value3"
 
-#         data = {}
+        response = session.create_configmap(
+            name="cm-id-yml-cwl", key="from_dict_as_yaml", content=yaml.dump(data)
+        )
 
-#         data["cwlVersion"] = "v1.0"
-#         data["$graph"] = [
-#             {"class": "Workflow", "id": "my_id"},
-#             {"class": "CommandLineTool", "id": "my_id"},
-#         ]
-#         data["key3"] = "value3"
+        self.assertIsInstance(response, V1ConfigMap)
 
-#         cm_definition = ConfigMapDescription(
-#             name="cm-id-yml-cwl", key="from_dict_as_yaml", content=yaml.dump(data)
-#         )
+    def test_configmap_from_dict_as_json(self):
 
-#         response = session.create_configmap(cm_definition)
+        session = CalrissianContext(
+            namespace=self.namespace,
+            storage_class="microk8s-hostpath",
+            volume_size="1G",
+        )
 
-#         self.assertTrue(isinstance(response, V1ConfigMap))
+        if not session.is_namespace_created():
+            session.create_namespace()
 
-#     def test_configmap_from_dict_as_json(self):
+        data = {}
 
-#         ns_configmap = "ns-config-map-1"
+        data["key1"] = "value1"
+        data["key2"] = "value2"
+        data["key3"] = "value3"
 
-#         session = KubernetesSession(namespace=ns_configmap)
+        response = session.create_configmap(
+            name="cm-id-json", key="from_dict", content=json.dumps(data, indent=4)
+        )
 
-#         if not session.is_namespace_created():
-#             session.create_namespace()
-
-#         data = {}
-
-#         data["key1"] = "value1"
-#         data["key2"] = "value2"
-#         data["key3"] = "value3"
-
-#         cm_definition = ConfigMapDescription(
-#             name="cm-id-json", key="from_dict", content=json.dumps(data, indent=4)
-#         )
-
-#         response = session.create_configmap(cm_definition)
-
-#         self.assertTrue(isinstance(response, V1ConfigMap))
+        self.assertIsInstance(response, V1ConfigMap)
 
 
 # # if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import os
-from typing import TextIO
+from typing import Dict, TextIO
 
 from kubernetes import client, config
 from kubernetes.client import Configuration
@@ -9,9 +9,9 @@ from kubernetes.client.rest import ApiException
 class CalrissianContext(object):
     def __init__(
         self,
-        namespace,
-        storage_class,
-        volume_size,
+        namespace: str,
+        storage_class: str,
+        volume_size: str,
         kubeconfig_file: TextIO = None,
     ):
 
@@ -273,27 +273,29 @@ class CalrissianContext(object):
 
     def create_configmap(
         self,
-        configmap_definition,
+        name,
+        key,
+        content,
+        annotations: Dict = {},
+        labels: Dict = {},
     ):
 
-        if self.is_config_map_created(name=configmap_definition.name):
+        if self.is_config_map_created(name=name):
 
-            return self.core_v1_api.read_namespaced_config_map(
-                namespace=self.namespace, name=configmap_definition.name
-            )
+            return self.core_v1_api.read_namespaced_config_map(namespace=self.namespace, name=name)
 
         else:
 
             metadata = client.V1ObjectMeta(
-                annotations=configmap_definition.annotations,
+                annotations=annotations,
                 deletion_grace_period_seconds=30,
-                labels=configmap_definition.labels,
-                name=configmap_definition.name,
+                labels=labels,
+                name=name,
                 namespace=self.namespace,
             )
 
             data = {}
-            data[configmap_definition.key] = configmap_definition.content
+            data[key] = content
 
             config_map = client.V1ConfigMap(
                 api_version="v1",
