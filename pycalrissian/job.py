@@ -29,6 +29,7 @@ class CalrissianJob(object):
         self.runtime_context = runtime_context
         self.pod_env_vars = pod_env_vars
         self.pod_node_selector = pod_node_selector
+        self.job_name = "job-name"  # TODO
 
         self._create_cwl_cm()
         self._create_params_cm()
@@ -192,7 +193,7 @@ class CalrissianJob(object):
             volumes=volumes,
         )
 
-        return self.create_job(name="job-name", pod_template=pod_spec)
+        return self.create_job(name=self.job_name, pod_template=pod_spec)
 
     @staticmethod
     def create_container(
