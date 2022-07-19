@@ -25,8 +25,8 @@ class CalrissianJob(object):
         runtime_context: CalrissianContext,
         pod_env_vars: Dict = None,
         pod_node_selector: Dict = None,
-        max_ram: int = 8,
-        max_cores: int = 16,
+        max_ram: str = "8G",
+        max_cores: str = "16",
         security_context: Dict = None,
         service_account: str = None,
         storage_class: str = None,
@@ -125,9 +125,9 @@ class CalrissianJob(object):
             ),
         )
         workflow_volume_mount = client.V1VolumeMount(
-            mount_path=os.path.join("/workflow-input/workflow.cwl"),
+            mount_path="/workflow-input",
             name="volume-cwl-workflow",
-            sub_path="cwl-workflow",
+            #            sub_path="cwl-workflow",
         )
 
         # the parameters
@@ -141,9 +141,9 @@ class CalrissianJob(object):
             ),
         )
         params_volume_mount = client.V1VolumeMount(
-            mount_path=os.path.join("/workflow-params/params.yml"),
+            mount_path="/workflow-params",
             name="volume-params",
-            sub_path="params",
+            #            sub_path="params",
         )
 
         # the RWX volume for Calrissian from volume claim
@@ -184,7 +184,7 @@ class CalrissianJob(object):
             pod_env_vars_volume_mount = client.V1VolumeMount(
                 mount_path="/pod-env-vars",
                 name="volume-pod-env-vars",
-                sub_path="pod-env-vars",
+                #               sub_path="pod-env-vars",
             )
 
             volumes.append(pod_env_vars_volume)
@@ -210,7 +210,7 @@ class CalrissianJob(object):
             pod_node_selector_volume_mount = client.V1VolumeMount(
                 mount_path="/pod-node-selector",
                 name="volume-pod-node-selector",
-                sub_path="pod-node-selector",
+                #                sub_path="pod-node-selector",
             )
 
             volumes.append(pod_node_selector_volume)
@@ -319,7 +319,7 @@ class CalrissianJob(object):
 
         if self.pod_env_vars:
             args.extend(
-                ["--pod-env-vars", os.path.join("pod_env_vars", "pod_env_vars.json")]
+                ["--pod-env-vars", os.path.join("/pod_env_vars", "pod_env_vars.json")]
             )
 
         if self.debug:
@@ -361,10 +361,14 @@ class CalrissianJob(object):
         args = {}
 
         args[ContainerNames.SIDECAR_USAGE] = [
-            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}') ]; do sleep 5; done; [ -f {{usage_report}} ] && cat {{usage_report}}"  # noqa: E501
+            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{{.status.containerStatuses[0].state.terminated}}') ]; do sleep 5; done; [ -f {0} ] && cat {0}".format(  # noqa: E501
+                os.path.join(self.calrissian_base_path, "usage.json")
+            )
         ]
         args[ContainerNames.SIDECAR_OUTPUT] = [
-            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}') ]; do sleep 5; done; [ -f {{stdout}} ] && cat {{stdout}}"  # noqa: E501
+            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{{.status.containerStatuses[0].state.terminated}}') ]; do sleep 5; done; [ -f {0} ] && cat {0}".format(  # noqa: E501
+                os.path.join(self.calrissian_base_path, "output.json")
+            )
         ]
 
         container = self.create_container(
