@@ -1,10 +1,9 @@
 from enum import Enum
 
-from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.rest import ApiException
 
 from pycalrissian.context import CalrissianContext
-from pycalrissian.job import ContainerNames
+from pycalrissian.job import CalrissianJob, ContainerNames
 
 
 class JobStatus(Enum):
@@ -14,7 +13,7 @@ class JobStatus(Enum):
 
 
 class JobExecution(object):
-    def __init__(self, job: V1Job, runtime_context: CalrissianContext) -> None:
+    def __init__(self, job: CalrissianJob, runtime_context: CalrissianContext) -> None:
         self.job = job
         self.runtime_context = runtime_context
         self.namespaced_job = None
@@ -22,9 +21,9 @@ class JobExecution(object):
     def submit(self):
         """Submits the job to the cluster"""
         response = self.runtime_context.batch_v1_api.create_namespaced_job(
-            self.runtime_context.namespace, self.job
+            self.runtime_context.namespace, self.job.to_k8s_job()
         )
-        self.namespaced_job_name = ""
+        self.namespaced_job_name = self.job.job_name
         self.namespaced_job = response
 
     def get_status(self):
@@ -35,7 +34,9 @@ class JobExecution(object):
                 namespace=self.runtime_context.namespace,
                 pretty=True,
             )
-
+            print(response.status.active)
+            if response.status is None:
+                return JobStatus.ACTIVE
             if response.status.active:
                 return JobStatus.ACTIVE
             if response.status.succeeded:
