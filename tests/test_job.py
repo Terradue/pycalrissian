@@ -49,7 +49,7 @@ class TestCalrissianJob(unittest.TestCase):
         cwl = {}
         params = {}
 
-        job = CalrissianJob(cwl=cwl, params=params, runtime_context=session)
+        job = CalrissianJob(cwl=cwl, params=params, runtime_context=session, debug=True)
 
         print(dir(job.to_k8s_job()))
         job.to_yaml("job.yml")

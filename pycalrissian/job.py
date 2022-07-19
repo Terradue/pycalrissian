@@ -1,10 +1,11 @@
 import json
 import os
 from enum import Enum
-from typing import Dict
+from typing import Dict, List
 
 import yaml
 from kubernetes import client
+from kubernetes.client.models.v1_container import V1Container
 
 from pycalrissian.context import CalrissianContext
 
@@ -36,6 +37,13 @@ class CalrissianJob(object):
         self.runtime_context = runtime_context
         self.pod_env_vars = pod_env_vars
         self.pod_node_selector = pod_node_selector
+        self.max_ram = max_ram
+        self.max_cores = max_cores
+        self.security_context = security_context
+        self.storage_class = storage_class  # check this, is it needed?
+        self.debug = debug
+        self.no_read_only = no_read_only
+
         self.job_name = "job-name"  # TODO
 
         self._create_cwl_cm()
@@ -98,12 +106,6 @@ class CalrissianJob(object):
             name="calrissian-wdir",
         )
 
-        volume_mounts = [
-            workflow_volume_mount,
-            params_volume_mount,
-            calrissian_wdir_volume_mount,
-        ]
-
         workflow_volume = client.V1Volume(
             name="cwl-workflow",
             config_map=client.V1ConfigMapVolumeSource(
@@ -132,71 +134,23 @@ class CalrissianJob(object):
 
         volumes = [workflow_volume, params_volume, calrissian_wdir_volume]
 
-        # set the env var using the metadata
-        env = client.V1EnvVar(
-            name="CALRISSIAN_POD_NAME",
-            value_from=client.V1EnvVarSource(
-                field_ref=client.V1ObjectFieldSelector(field_path="metadata.name")
-            ),
-        )
-
-        container_1 = self.create_container(
-            name=ContainerNames.CALRISSIAN,
-            image="terradue/calrissian:0.11.0-sprint1",
-            command=["calrissian"],
-            args=[
-                "--stdout",
-                "path to stdout",
-                "--stderr",
-                "path to stderr",
-                "--usage-report",
-                "path to usage_report",
-                "--max-ram",
-                "max_ram",
-                "--max-cores",
-                "{{max_cores}}",
-                "--tmp-outdir-prefix",
-                "{{tmp_outdir_prefix}}",
-                "--pod-env-vars",
-                "{{pod_env_vars_path}}",
-                "--pod-nodeselectors",
-                "{{pod_nodeselectors_path}}",
-                "--debug",
-                "--no-read-only",
-                "--outdir",
-                "{{outdir}}",
-                "/workflow/workflow.cwl",
-                "/workflow/params.yml",
-            ],
-            env=[env],
-            volume_mounts=volume_mounts,
-        )
-
-        container_2 = self.create_container(
-            name=ContainerNames.SIDECAR_USAGE,
-            image="bitnami/kubectl",
-            command=["sh", "-c"],
-            args=[
-                "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}') ]; do sleep 5; done; [ -f {{usage_report}} ] && cat {{usage_report}}"  # noqa: E501
-            ],
-            env=[],
-            volume_mounts=[calrissian_wdir_volume_mount],
-        )
-
-        container_3 = self.create_container(
-            name=ContainerNames.SIDECAR_OUTPUT,
-            image="bitnami/kubectl",
-            command=["sh", "-c"],
-            args=[
-                "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}') ]; do sleep 5; done; [ -f {{stdout}} ] && cat {{stdout}}"  # noqa: E501
-            ],
-            env=[],
-            volume_mounts=[calrissian_wdir_volume_mount],
-        )
+        volume_mounts = [
+            workflow_volume_mount,
+            params_volume_mount,
+            calrissian_wdir_volume_mount,
+        ]
 
         pod_spec = self.create_pod_template(
             name="calrissian_pod",
-            containers=[container_1, container_2, container_3],
+            containers=[
+                self._get_calrissian_container(volume_mounts=volume_mounts),
+                self._get_side_car_container(
+                    ContainerNames.SIDECAR_OUTPUT, volume_mounts=[workflow_volume_mount]
+                ),
+                self._get_side_car_container(
+                    ContainerNames.SIDECAR_USAGE, volume_mounts=[workflow_volume_mount]
+                ),
+            ],
             volumes=volumes,
         )
 
@@ -220,10 +174,14 @@ class CalrissianJob(object):
         return container
 
     @staticmethod
-    def create_pod_template(name, containers, volumes):
+    def create_pod_template(name, containers, volumes, node_selector=None):
+        """Creates the pod template with the three containers"""
         pod_template = client.V1PodTemplateSpec(
             spec=client.V1PodSpec(
-                restart_policy="Never", containers=containers, volumes=volumes
+                restart_policy="Never",
+                containers=containers,
+                volumes=volumes,
+                node_selector=node_selector,
             ),
             metadata=client.V1ObjectMeta(name=name, labels={"pod_name": name}),
         )
@@ -231,14 +189,92 @@ class CalrissianJob(object):
         return pod_template
 
     @staticmethod
-    def create_job(name, pod_template):
+    def create_job(name, pod_template, backoff_limit=4):
         metadata = client.V1ObjectMeta(name=name, labels={"job_name": name})
 
         job = client.V1Job(
             api_version="batch/v1",
             kind="Job",
             metadata=metadata,
-            spec=client.V1JobSpec(backoff_limit=0, template=pod_template),
+            spec=client.V1JobSpec(backoff_limit=backoff_limit, template=pod_template),
         )
 
         return job
+
+    def _get_calrissian_args(self) -> List:
+
+        args = []
+
+        args.extend(["--stdout", "path_to_stdout"])
+
+        args.extend(["--stderr", "path_to_stderr"])
+
+        args.extend(["--usage-report", "path_to_usage_report"])
+
+        args.extend(["--max-ram", self.max_ram, "--max-cores", self.max_cores])
+
+        args.extend(["--tmp-outdir-prefix", "tmp_outdir_prefix"])
+
+        args.extend(["--outdir", "outdir"])
+
+        if self.pod_node_selector:
+            args.extend(["--pod-nodeselectors", "{{pod_nodeselectors_path}}"])
+
+        if self.pod_env_vars:
+            args.extend(["--pod-env-vars", "pod_env_vars_path"])
+
+        if self.debug:
+            args.append("--debug")
+
+        if self.no_read_only:
+            args.append("--no-read-only")
+
+        args.extend(["/workflow/workflow.cwl", "/workflow/params.yml"])
+
+        return args
+
+    def _get_calrissian_container(self, volume_mounts: List) -> V1Container:
+        """Creates the Calrissian container definition"""
+        # set the env var using the metadata
+        env = client.V1EnvVar(
+            name="CALRISSIAN_POD_NAME",
+            value_from=client.V1EnvVarSource(
+                field_ref=client.V1ObjectFieldSelector(field_path="metadata.name")
+            ),
+        )
+
+        container = self.create_container(
+            name=ContainerNames.CALRISSIAN,
+            image="terradue/calrissian:0.11.0-sprint1",
+            command=["calrissian"],
+            args=self._get_calrissian_args(),
+            env=[env],
+            volume_mounts=volume_mounts,
+        )
+
+        return container
+
+    def _get_side_car_container(self, name, volume_mounts):
+        """Creates the sidecar containers definition"""
+        if name not in [ContainerNames.SIDECAR_USAGE, ContainerNames.SIDECAR_OUTPUT]:
+            raise ValueError
+
+        args = {}
+
+        args[ContainerNames.SIDECAR_USAGE] = [
+            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}') ]; do sleep 5; done; [ -f {{usage_report}} ] && cat {{usage_report}}"  # noqa: E501
+        ]
+        args[ContainerNames.SIDECAR_OUTPUT] = [
+            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{.status.containerStatuses[0].state.terminated}') ]; do sleep 5; done; [ -f {{stdout}} ] && cat {{stdout}}"  # noqa: E501
+        ]
+
+        container = self.create_container(
+            name=name,
+            image="bitnami/kubectl",
+            command=["sh", "-c"],
+            args=args[name],
+            env=[],
+            volume_mounts=volume_mounts,
+        )
+
+        return container
