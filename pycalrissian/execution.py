@@ -71,46 +71,41 @@ class JobExecution(object):
     def get_output(self):
         """Returns the job output"""
         if self.is_succeeded:
-            return self.get_container_log(ContainerNames.SIDECAR_OUTPUT)
+            return self._get_container_log(ContainerNames.SIDECAR_OUTPUT)
 
     def get_log(self):
         """Returns the job execution log"""
-        if self.is_succeeded:
-            return self.get_container_log(ContainerNames.CALRISSIAN)
+        if self.is_complete:
+            return self._get_container_log(ContainerNames.CALRISSIAN)
 
     def get_usage_report(self):
         """Returns the job usage report"""
-        if self.is_succeeded:
-            return self.get_container_log(ContainerNames.SIDECAR_USAGE)
+        if self.is_complete:
+            return self._get_container_log(ContainerNames.SIDECAR_USAGE)
 
-    def get_container_log(self, container):
+    def _get_container_log(self, container):
 
-        if self.is_succeeded:
-            try:
-                response = self.runtime_context.batch_v1_api.read_namespaced_job_status(
-                    name=self.namespaced_job_name,
-                    namespace=self.runtime_context.namespace,
-                    pretty=True,
-                )
+        print(f"container: {container}")
 
-                pod_label_selector = (
-                    "controller-uid=" + response.metadata.labels["controller-uid"]
-                )
-                pods_list = self.runtime_context.core_v1_api.list_namespaced_pod(
-                    namespace=self.runtime_context.namespace,
-                    label_selector=pod_label_selector,
-                    timeout_seconds=10,
-                )
-                pod_name = pods_list.items[0].metadata.name
+        try:
 
-                return self.runtime_context.core_v1_api.read_namespaced_pod_log(
-                    name=pod_name,
-                    namespace=self.runtime_context.namespace,
-                    _return_http_data_only=True,
-                    _preload_content=False,
-                    container=container,
-                ).data.decode("utf-8")
+            pod_label_selector = f"job-name={self.job.job_name}"
+            pods_list = self.runtime_context.core_v1_api.list_namespaced_pod(
+                namespace=self.runtime_context.namespace,
+                label_selector=pod_label_selector,
+                timeout_seconds=10,
+            )
+            pod_name = pods_list.items[0].metadata.name
+            print(f"podname: {pod_name}")
 
-            except ApiException as e:
-                print("Exception when calling get status: %s\n" % e)
-                raise e
+            return self.runtime_context.core_v1_api.read_namespaced_pod_log(
+                name=pod_name,
+                namespace=self.runtime_context.namespace,
+                _return_http_data_only=True,
+                _preload_content=False,
+                container=container.value,
+            ).data.decode("utf-8")
+
+        except ApiException as e:
+            print("Exception when calling get status: %s\n" % e)
+            raise e

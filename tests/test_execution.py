@@ -78,4 +78,6 @@ class TestCalrissianExecution(unittest.TestCase):
         print(f"complete {execution.is_complete()}")
         print(f"succeeded {execution.is_succeeded()}")
 
-        execution.get_log()
+        print(execution.get_log())
+        print(execution.get_usage_report())
+        print(execution.get_output())
