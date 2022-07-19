@@ -12,7 +12,7 @@ from kubernetes.client.models.v1_secret import V1Secret
 
 from pycalrissian.context import CalrissianContext
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/microk8s.config"
+os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianContext(unittest.TestCase):

@@ -7,6 +7,7 @@ from kubernetes import client, config
 from kubernetes.client import Configuration
 from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolumeClaim
 from kubernetes.client.rest import ApiException
+from loguru import logger
 
 
 class CalrissianContext(object):
@@ -37,6 +38,7 @@ class CalrissianContext(object):
 
         # create namespace
         if not self.is_namespace_created():
+            logger.info(f"create namespace {self.namespace}")
             self.create_namespace()
 
         # create roles and role binding
@@ -53,6 +55,7 @@ class CalrissianContext(object):
         }
 
         for key, value in roles.items():
+            logger.info(f"create role {key}")
             response = self.create_role(
                 name=key,
                 verbs=value["verbs"],
@@ -61,11 +64,15 @@ class CalrissianContext(object):
             )
             # print(type(response))
             # assert(isinstance(response, V1Role))
-
+            logger.info(f"create role binding for role {key}")
             self.create_role_binding(name=value["role_binding"], role=key)
             # assert(isinstance(response, V1RoleBinding))
 
         # create volumes
+        logger.info(
+            f"create persistent volume claim 'calrissian-wdir' of {self.volume_size}"
+            "with storage class {self.storage_class}"
+        )
         response = self.create_pvc(
             name="calrissian-wdir",
             size=self.volume_size,
@@ -76,16 +83,17 @@ class CalrissianContext(object):
         assert isinstance(response, V1PersistentVolumeClaim)
 
         if self.image_pull_secrets:
-
+            logger.info(f"create secret {self.secret_name}")
             self.create_image_pull_secret(self.secret_name)
 
+            logger.info("patch service account")
             # self.patch_service_account()
 
     def dispose(self):
 
         # TODO
         # Add delete for the pods
-
+        logger.info(f"dispose namespace {self.namespace}")
         try:
             response = self.core_v1_api.delete_namespace(
                 name=self.namespace, pretty=True, grace_period_seconds=0
@@ -216,11 +224,11 @@ class CalrissianContext(object):
     def create_namespace(self, job_labels: dict = None) -> client.V1Namespace:
 
         if self.is_namespace_created():
-
+            logger.info(f"namespace {self.namespace} exists, skipping creation")
             return self.core_v1_api.read_namespace(name=self.namespace)
 
         else:
-
+            logger.info(f"creating namespace {self.namespace}")
             try:
                 body = client.V1Namespace(
                     metadata=client.V1ObjectMeta(
@@ -232,6 +240,7 @@ class CalrissianContext(object):
                 )  # noqa: E501
                 return response
             except ApiException as e:
+                logger.error(f"namespace {self.namespace} creation failed")
                 raise e
 
     def create_role(
@@ -342,17 +351,6 @@ class CalrissianContext(object):
 
                 raise e
 
-    # def dispose(self) -> client.V1Status:
-    #     try:
-
-    #         response = self.core_v1_api.delete_namespace(
-    #             name=self.namespace, pretty=True, grace_period_seconds=0
-    #         )
-    #         return response
-
-    #     except ApiException as e:
-    #         raise e
-
     def create_configmap(
         self,
         name,
@@ -364,40 +362,38 @@ class CalrissianContext(object):
 
         if self.is_config_map_created(name=name):
 
-            return self.core_v1_api.read_namespaced_config_map(
+            self.core_v1_api.delete_namespaced_config_map(
                 namespace=self.namespace, name=name
             )  # noqa: E501
 
-        else:
+        metadata = client.V1ObjectMeta(
+            annotations=annotations,
+            deletion_grace_period_seconds=30,
+            labels=labels,
+            name=name,
+            namespace=self.namespace,
+        )
 
-            metadata = client.V1ObjectMeta(
-                annotations=annotations,
-                deletion_grace_period_seconds=30,
-                labels=labels,
-                name=name,
+        data = {}
+        data[key] = content
+
+        config_map = client.V1ConfigMap(
+            api_version="v1",
+            kind="ConfigMap",
+            data=data,
+            metadata=metadata,
+        )
+
+        try:
+            response = self.core_v1_api.create_namespaced_config_map(
                 namespace=self.namespace,
+                body=config_map,
+                pretty=True,
             )
+            return response
 
-            data = {}
-            data[key] = content
-
-            config_map = client.V1ConfigMap(
-                api_version="v1",
-                kind="ConfigMap",
-                data=data,
-                metadata=metadata,
-            )
-
-            try:
-                response = self.core_v1_api.create_namespaced_config_map(
-                    namespace=self.namespace,
-                    body=config_map,
-                    pretty=True,
-                )
-                return response
-
-            except ApiException as e:
-                raise e
+        except ApiException as e:
+            raise e
 
     def create_image_pull_secret(
         self,

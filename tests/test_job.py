@@ -53,7 +53,7 @@ class TestCalrissianJob(unittest.TestCase):
 
         params = {"message": "hello world!"}
 
-        pod_env_vars = {"A": "1", "B": "2"}
+        pod_env_vars = {"C": "1", "B": "2"}
 
         job = CalrissianJob(
             cwl=cwl,
@@ -65,6 +65,5 @@ class TestCalrissianJob(unittest.TestCase):
             max_ram="4G",
         )
 
-        print(dir(job.to_k8s_job()))
         job.to_yaml("job.yml")
         self.assertIsInstance(job.to_k8s_job(), V1Job)

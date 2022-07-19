@@ -7,6 +7,7 @@ from typing import Dict, List
 import yaml
 from kubernetes import client
 from kubernetes.client.models.v1_container import V1Container
+from loguru import logger
 
 from pycalrissian.context import CalrissianContext
 
@@ -48,6 +49,10 @@ class CalrissianJob(object):
         self.no_read_only = no_read_only
 
         if self.security_context is None:
+            logger.info(
+                "using default security context "
+                "{'runAsUser': 0, 'runAsGroup': 0, 'fsGroup': 0}"
+            )
             self.security_context = {"runAsUser": 0, "runAsGroup": 0, "fsGroup": 0}
 
         self.job_name = str(
@@ -55,10 +60,20 @@ class CalrissianJob(object):
                 f"job-{uuid.uuid4()}-{uuid.uuid5(uuid.NAMESPACE_DNS, 'terradue.com')}"
             )
         )
-
+        logger.info(f"job name: {self.job_name}")
+        logger.info("create CWL configMap")
         self._create_cwl_cm()
+        logger.info("create processing parameters configMap")
         self._create_params_cm()
-        self._create_pod_env_vars_cm()
+
+        if self.pod_env_vars:
+            logger.info("Create Pod environment variables configMap")
+            self._create_pod_env_vars_cm()
+
+        if self.pod_node_selector:
+            logger.info("Create Pod node selector configMap")
+            self._create_pod_node_selector_cm()
+
         self.calrissian_base_path = "/calrissian"
 
     def _create_cwl_cm(self):
@@ -109,6 +124,7 @@ class CalrissianJob(object):
                 Dumper=Dumper,
                 default_flow_style=False,
             )
+        logger.info(f"job {self.job_name} serialized to {file_path}")
 
     def to_k8s_job(self):
         """Cast to kubernetes Job"""
@@ -130,7 +146,6 @@ class CalrissianJob(object):
         workflow_volume_mount = client.V1VolumeMount(
             mount_path="/workflow-input",
             name="volume-cwl-workflow",
-            #            sub_path="cwl-workflow",
         )
 
         # the parameters
@@ -146,7 +161,6 @@ class CalrissianJob(object):
         params_volume_mount = client.V1VolumeMount(
             mount_path="/workflow-params",
             name="volume-params",
-            #            sub_path="params",
         )
 
         # the RWX volume for Calrissian from volume claim
@@ -187,7 +201,6 @@ class CalrissianJob(object):
             pod_env_vars_volume_mount = client.V1VolumeMount(
                 mount_path="/pod-env-vars",
                 name="volume-pod-env-vars",
-                #               sub_path="pod-env-vars",
             )
 
             volumes.append(pod_env_vars_volume)
@@ -213,7 +226,6 @@ class CalrissianJob(object):
             pod_node_selector_volume_mount = client.V1VolumeMount(
                 mount_path="/pod-node-selector",
                 name="volume-pod-node-selector",
-                #                sub_path="pod-node-selector",
             )
 
             volumes.append(pod_node_selector_volume)
@@ -396,13 +408,6 @@ class CalrissianJob(object):
         )
 
         return container
-
-    @staticmethod
-    def sanitize_k8_parameters(value: str) -> str:
-        value = value.replace("_", "-").lower()
-        while value.endswith("-"):
-            value = value[:-1]
-        return value
 
     @staticmethod
     def shorten_namespace(value: str) -> str:

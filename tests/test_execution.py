@@ -70,7 +70,6 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        print(f"active: {execution.is_active()}")
         while execution.is_active():
             print("active")
             time.sleep(5)

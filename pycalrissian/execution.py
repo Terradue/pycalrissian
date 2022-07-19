@@ -1,6 +1,8 @@
+import time
 from enum import Enum
 
 from kubernetes.client.rest import ApiException
+from loguru import logger
 
 from pycalrissian.context import CalrissianContext
 from pycalrissian.job import CalrissianJob, ContainerNames
@@ -20,11 +22,13 @@ class JobExecution(object):
 
     def submit(self):
         """Submits the job to the cluster"""
+        logger.info(f"submit job {self.job.job_name}")
         response = self.runtime_context.batch_v1_api.create_namespaced_job(
             self.runtime_context.namespace, self.job.to_k8s_job()
         )
         self.namespaced_job_name = self.job.job_name
         self.namespaced_job = response
+        logger.info(f"job {self.job.job_name} submitted")
 
     def get_status(self):
         """Returns the job status"""
@@ -44,7 +48,7 @@ class JobExecution(object):
             if response.status.failed:
                 return JobStatus.FAILED
         except ApiException as e:
-            print("Exception when calling get status: %s\n" % e)
+            logger.error("Exception when calling get status: %s\n" % e)
             raise e
 
     def is_complete(self):
@@ -111,7 +115,7 @@ class JobExecution(object):
             raise e
 
     def get_start_time(self):
-
+        """Returns the start time"""
         try:
             response = self.runtime_context.batch_v1_api.read_namespaced_job_status(
                 name=self.namespaced_job_name,
@@ -125,7 +129,7 @@ class JobExecution(object):
             raise e
 
     def get_completion_time(self):
-
+        """Returns either the completion time or the last transition time"""
         try:
             response = self.runtime_context.batch_v1_api.read_namespaced_job_status(
                 name=self.namespaced_job_name,
@@ -134,11 +138,24 @@ class JobExecution(object):
             )
             if response.status.completion_time is not None:
                 return response.status.completion_time
-            elif (
-                response.status.conditions is not None
-                and "last_transition_time" in response.status.conditions[0].keys()
-            ):
-                return response.status.conditions[0]["'last_transition_time'"]
+            elif response.status.conditions is not None:
+                return response.status.conditions[0].last_transition_time
         except ApiException as e:
             print("Exception when calling get status: %s\n" % e)
             raise e
+
+    def monitor(self, interval: int = 5) -> None:
+
+        if self.is_active():
+
+            while self.is_active():
+                logger.info(f"job {self.job.job_name} is active")
+                time.sleep(interval)
+
+            if self.is_complete():
+                logger.info(f"exection is complete {self.is_complete()}")
+            if self.is_succeeded():
+                logger.info("outcome: success!")
+
+        else:
+            logger.warning("job is not submitted")
