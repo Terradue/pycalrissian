@@ -2,12 +2,13 @@ import base64
 import os
 import unittest
 
+import yaml
 from kubernetes.client.models.v1_job import V1Job
 
 from pycalrissian.context import CalrissianContext
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/microk8s.config"
+os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianJob(unittest.TestCase):
@@ -39,17 +40,30 @@ class TestCalrissianJob(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="microk8s-hostpath",
+            storage_class="longhorn",  # "microk8s-hostpath",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
 
         session.initialise()
 
-        cwl = {}
-        params = {}
+        with open("tests/simple.cwl", "r") as stream:
 
-        job = CalrissianJob(cwl=cwl, params=params, runtime_context=session, debug=True)
+            cwl = yaml.safe_load(stream)
+
+        params = {"message": "hello world!"}
+
+        pod_env_vars = {"A": "1", "B": "2"}
+
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=session,
+            pod_env_vars=pod_env_vars,
+            debug=True,
+            max_cores=2,
+            max_ram="4G",
+        )
 
         print(dir(job.to_k8s_job()))
         job.to_yaml("job.yml")
