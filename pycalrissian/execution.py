@@ -34,8 +34,8 @@ class JobExecution(object):
                 namespace=self.runtime_context.namespace,
                 pretty=True,
             )
-            print(response.status.active)
-            if response.status is None:
+            print(response.status)
+            if response.status.active is None and response.status.start_time is None:
                 return JobStatus.ACTIVE
             if response.status.active:
                 return JobStatus.ACTIVE
@@ -106,6 +106,39 @@ class JobExecution(object):
                 container=container.value,
             ).data.decode("utf-8")
 
+        except ApiException as e:
+            print("Exception when calling get status: %s\n" % e)
+            raise e
+
+    def get_start_time(self):
+
+        try:
+            response = self.runtime_context.batch_v1_api.read_namespaced_job_status(
+                name=self.namespaced_job_name,
+                namespace=self.runtime_context.namespace,
+                pretty=True,
+            )
+            if response.status.start_time is not None:
+                return response.status.start_time
+        except ApiException as e:
+            print("Exception when calling get status: %s\n" % e)
+            raise e
+
+    def get_completion_time(self):
+
+        try:
+            response = self.runtime_context.batch_v1_api.read_namespaced_job_status(
+                name=self.namespaced_job_name,
+                namespace=self.runtime_context.namespace,
+                pretty=True,
+            )
+            if response.status.completion_time is not None:
+                return response.status.completion_time
+            elif (
+                response.status.conditions is not None
+                and "last_transition_time" in response.status.conditions[0].keys()
+            ):
+                return response.status.conditions[0]["'last_transition_time'"]
         except ApiException as e:
             print("Exception when calling get status: %s\n" % e)
             raise e

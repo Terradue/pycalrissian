@@ -81,3 +81,6 @@ class TestCalrissianExecution(unittest.TestCase):
         print(execution.get_log())
         print(execution.get_usage_report())
         print(execution.get_output())
+
+        print(execution.get_start_time())
+        print(execution.get_completion_time())

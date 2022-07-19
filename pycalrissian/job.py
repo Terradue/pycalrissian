@@ -47,6 +47,9 @@ class CalrissianJob(object):
         self.debug = debug
         self.no_read_only = no_read_only
 
+        if self.security_context is None:
+            self.security_context = {"runAsUser": 0, "runAsGroup": 0, "fsGroup": 0}
+
         self.job_name = str(
             self.shorten_namespace(
                 f"job-{uuid.uuid4()}-{uuid.uuid5(uuid.NAMESPACE_DNS, 'terradue.com')}"
@@ -231,6 +234,7 @@ class CalrissianJob(object):
                 ),
             ],
             volumes=volumes,
+            security_context=self.security_context,
         )
 
         return self.create_job(
@@ -258,14 +262,22 @@ class CalrissianJob(object):
         return container
 
     @staticmethod
-    def create_pod_template(name, containers, volumes, node_selector=None):
+    def create_pod_template(
+        name, containers, volumes, security_context, node_selector=None
+    ):
         """Creates the pod template with the three containers"""
+
         pod_template = client.V1PodTemplateSpec(
             spec=client.V1PodSpec(
                 restart_policy="Never",
                 containers=containers,
                 volumes=volumes,
                 node_selector=node_selector,
+                security_context=client.V1PodSecurityContext(
+                    run_as_group=security_context["runAsGroup"],
+                    run_as_user=security_context["runAsUser"],
+                    fs_group=security_context["fsGroup"],
+                ),
             ),
             metadata=client.V1ObjectMeta(name=name, labels={"pod_name": name}),
         )
@@ -282,7 +294,10 @@ class CalrissianJob(object):
             api_version="batch/v1",
             kind="Job",
             metadata=metadata,
-            spec=client.V1JobSpec(backoff_limit=backoff_limit, template=pod_template),
+            spec=client.V1JobSpec(
+                backoff_limit=backoff_limit,
+                template=pod_template,
+            ),
         )
 
         return job
