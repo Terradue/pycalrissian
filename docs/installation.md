@@ -15,5 +15,4 @@ conda install -c terradue pycalrissian
 
 **Development version**
 
-```mamba install -c terradue/label/dev pycalrissian
-```
+```mamba install -c terradue/label/dev pycalrissian```
