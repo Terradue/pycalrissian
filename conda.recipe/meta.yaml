@@ -1,15 +1,15 @@
-{% set data = load_setup_py_data() %}
 
 package:
   name: pycalrissian
-  version: {{ data.get('version') }}
+  version: "{{ load_setup_py_data().version }}"
 
 source:
-  path: ../
+  path: ..
 
 build:
   script: python setup.py install
   number: 1
+  noarch: python
 
 requirements:
   host:
