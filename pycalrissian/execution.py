@@ -16,7 +16,7 @@ class JobStatus(Enum):
     SUCCEEDED = "succeeded"
 
 
-class JobExecution(object):
+class CalrissianExecution(object):
     def __init__(self, job: CalrissianJob, runtime_context: CalrissianContext) -> None:
         self.job = job
         self.runtime_context = runtime_context
