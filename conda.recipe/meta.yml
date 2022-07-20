@@ -1,0 +1,30 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: pycalrissian
+  version: {{ data.get('version') }}
+
+source:
+  path: ..
+
+build:
+
+  number: 1
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - pyyaml
+    - kubernetes
+    - loguru
+
+
+
+about:
+  home: https://github.com/terradue/pycalrissian
+  license: Apache
+  summary: "Python client for Calrissian - CWL on kubernetes"
