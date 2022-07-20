@@ -8,7 +8,7 @@ source:
   path: ..
 
 build:
-
+  script: python setup.py install
   number: 1
 
 requirements:
