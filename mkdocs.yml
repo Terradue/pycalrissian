@@ -1,4 +1,12 @@
 site_name: pycalrissian
+site_description: 'Python client for Calrissian'
+# Repository
+
+repo_name: 'terradue/pycalrissian'
+repo_url: 'http://github.com/terradue/pycalrissian'
+edit_uri: 'blob/main/docs/src/'
+site_url: 'https://terradue.github.io/pycalrissian/'
+
 
 theme:
   name: material
@@ -7,6 +15,9 @@ markdown_extensions:
   - admonition
   - pymdownx.highlight
   - pymdownx.superfences
+
+plugins:
+  - search
 
 nav:
   - Introduction: 'index.md'
