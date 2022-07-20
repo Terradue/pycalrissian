@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import time
 from typing import Dict, TextIO
 
 from kubernetes import client, config
@@ -91,8 +92,12 @@ class CalrissianContext:
 
     def dispose(self):
 
-        # TODO
-        # Add delete for the pods
+        response = self.core_v1_api.list_namespaced_pod(self.namespace)
+
+        for pod in response.items:
+            logger.info(f"delete pod {pod.metadata.name}")
+            self.delete_pod(pod.metadata.name)
+
         logger.info(f"dispose namespace {self.namespace}")
         try:
             response = self.core_v1_api.delete_namespace(
@@ -102,6 +107,14 @@ class CalrissianContext:
 
         except ApiException as e:
             raise e
+
+    def delete_pod(self, name):
+
+        try:
+            response = self.core_v1_api.delete_namespaced_pod(name, self.namespace)
+            return response
+        except ApiException as e:
+            logger.error(f"Exception when delete namespaced pod {name}: {e}\n")
 
     def get_tmp_dir(self):
         """Returns the tmp directory path"""
@@ -236,6 +249,11 @@ class CalrissianContext:
             response = self.core_v1_api.create_namespace(
                 body=body, async_req=False
             )  # noqa: E501
+
+            while not self.is_namespace_created():
+                time.sleep(5)
+
+            logger.info(f"namespace {self.namespace} created")
             return response
         except ApiException as e:
             logger.error(f"namespace {self.namespace} creation failed, {e}\n")
