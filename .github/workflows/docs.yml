@@ -4,13 +4,30 @@ on:
     branches:
       - develop
       - main
+    paths:
+      # Only rebuild website when docs have changed
+      - 'README.md'
+      - 'docs/**'
+      - 'mkdocs.yml'
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - name: Checkout master
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
         with:
-          python-version: 3.x
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .["doc"]
+      - name: update API docs
+        run: |
+          pdocs as_markdown --output_dir docs/api/ --exclude_source --overwrite pycalrissian
+
       - run: pip install mkdocs-material
       - run: mkdocs gh-deploy --force
