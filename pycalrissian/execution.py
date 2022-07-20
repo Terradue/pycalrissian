@@ -1,5 +1,7 @@
+import json
 import time
 from enum import Enum
+from typing import Dict
 
 from kubernetes.client.rest import ApiException
 from loguru import logger
@@ -38,7 +40,6 @@ class JobExecution(object):
                 namespace=self.runtime_context.namespace,
                 pretty=True,
             )
-            print(response.status)
             if response.status.active is None and response.status.start_time is None:
                 return JobStatus.ACTIVE
             if response.status.active:
@@ -51,45 +52,43 @@ class JobExecution(object):
             logger.error("Exception when calling get status: %s\n" % e)
             raise e
 
-    def is_complete(self):
+    def is_complete(self) -> bool:
         """Returns True if the job execution is completed (success or failed)"""
         if self.get_status() in [JobStatus.SUCCEEDED, JobStatus.FAILED]:
             return True
         else:
             return False
 
-    def is_succeeded(self):
+    def is_succeeded(self) -> bool:
         """Returns True if the job execution is completed and succeeded"""
         if self.get_status() in [JobStatus.SUCCEEDED]:
             return True
         else:
             return False
 
-    def is_active(self):
+    def is_active(self) -> bool:
         """Returns True if the job execution is on-going"""
         if self.get_status() in [JobStatus.ACTIVE]:
             return True
         else:
             return False
 
-    def get_output(self):
+    def get_output(self) -> Dict:
         """Returns the job output"""
         if self.is_succeeded:
-            return self._get_container_log(ContainerNames.SIDECAR_OUTPUT)
+            return json.loads(self._get_container_log(ContainerNames.SIDECAR_OUTPUT))
 
     def get_log(self):
         """Returns the job execution log"""
         if self.is_complete:
             return self._get_container_log(ContainerNames.CALRISSIAN)
 
-    def get_usage_report(self):
+    def get_usage_report(self) -> Dict:
         """Returns the job usage report"""
         if self.is_complete:
-            return self._get_container_log(ContainerNames.SIDECAR_USAGE)
+            return json.loads(self._get_container_log(ContainerNames.SIDECAR_USAGE))
 
     def _get_container_log(self, container):
-
-        print(f"container: {container}")
 
         try:
 
@@ -100,7 +99,6 @@ class JobExecution(object):
                 timeout_seconds=10,
             )
             pod_name = pods_list.items[0].metadata.name
-            print(f"podname: {pod_name}")
 
             return self.runtime_context.core_v1_api.read_namespaced_pod_log(
                 name=pod_name,

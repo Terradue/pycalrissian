@@ -70,8 +70,8 @@ class CalrissianContext(object):
 
         # create volumes
         logger.info(
-            f"create persistent volume claim 'calrissian-wdir' of {self.volume_size}"
-            "with storage class {self.storage_class}"
+            f"create persistent volume claim 'calrissian-wdir' of {self.volume_size} "
+            f"with storage class {self.storage_class}"
         )
         response = self.create_pvc(
             name="calrissian-wdir",
@@ -87,7 +87,7 @@ class CalrissianContext(object):
             self.create_image_pull_secret(self.secret_name)
 
             logger.info("patch service account")
-            # self.patch_service_account()
+            self.patch_service_account()
 
     def dispose(self):
 

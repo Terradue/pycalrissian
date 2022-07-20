@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+from datetime import datetime
 from enum import Enum
 from typing import Dict, List
 
@@ -24,6 +25,7 @@ class CalrissianJob(object):
         cwl: Dict,
         params: Dict,
         runtime_context: CalrissianContext,
+        cwl_entry_point: str = None,
         pod_env_vars: Dict = None,
         pod_node_selector: Dict = None,
         max_ram: str = "8G",
@@ -33,11 +35,14 @@ class CalrissianJob(object):
         storage_class: str = None,
         debug: bool = False,
         no_read_only: bool = False,
+        keep_pods: bool = False,
+        backoff_limit: int = 2,
     ):
 
         self.cwl = cwl
         self.params = params
         self.runtime_context = runtime_context
+        self.cwl_entry_point = cwl_entry_point
         self.pod_env_vars = pod_env_vars
         self.pod_node_selector = pod_node_selector
         self.max_ram = max_ram
@@ -47,6 +52,8 @@ class CalrissianJob(object):
         self.storage_class = storage_class  # check this, is it needed?
         self.debug = debug
         self.no_read_only = no_read_only
+        self.keep_pods = keep_pods
+        self.backoff_limit = backoff_limit
 
         if self.security_context is None:
             logger.info(
@@ -57,7 +64,7 @@ class CalrissianJob(object):
 
         self.job_name = str(
             self.shorten_namespace(
-                f"job-{uuid.uuid4()}-{uuid.uuid5(uuid.NAMESPACE_DNS, 'terradue.com')}"
+                f"job-{str(datetime.now().timestamp()).replace('.', '')}-{uuid.uuid4()}"
             )
         )
         logger.info(f"job name: {self.job_name}")
@@ -253,7 +260,7 @@ class CalrissianJob(object):
             name=self.job_name,
             pod_template=pod_spec,
             namespace=self.runtime_context.namespace,
-            backoff_limit=2,
+            backoff_limit=self.backoff_limit,
         )
 
     @staticmethod
@@ -346,7 +353,7 @@ class CalrissianJob(object):
 
         if self.pod_env_vars:
             args.extend(
-                ["--pod-env-vars", os.path.join("/pod_env_vars", "pod_env_vars.json")]
+                ["--pod-env-vars", os.path.join("/pod-env-vars", "pod_env_vars.json")]
             )
 
         if self.debug:
@@ -355,26 +362,46 @@ class CalrissianJob(object):
         if self.no_read_only:
             args.append("--no-read-only")
 
-        args.extend(["/workflow-input/workflow.cwl", "/workflow-params/params.yml"])
+        if self.cwl_entry_point is not None:
+            args.extend(
+                [
+                    f"/workflow-input/workflow.cwl#{self.cwl_entry_point}",
+                    "/workflow-params/params.yml",
+                ]
+            )
+        else:
+            args.extend(["/workflow-input/workflow.cwl", "/workflow-params/params.yml"])
 
         return args
 
     def _get_calrissian_container(self, volume_mounts: List) -> V1Container:
         """Creates the Calrissian container definition"""
         # set the env var using the metadata
-        env = client.V1EnvVar(
+        env_vars = []
+        calrissian_pod_name_env_var = client.V1EnvVar(
             name="CALRISSIAN_POD_NAME",
             value_from=client.V1EnvVarSource(
                 field_ref=client.V1ObjectFieldSelector(field_path="metadata.name")
             ),
         )
 
+        env_vars.append(calrissian_pod_name_env_var)
+
+        if self.keep_pods:
+            calrissian_delete_pod_env_var = client.V1EnvVar(
+                name="CALRISSIAN_DELETE_PODS",
+                value="false",
+            )
+
+            env_vars.append(calrissian_delete_pod_env_var)
+            logger.info("pods created by calrissian will not be deleted")
+
         container = self.create_container(
             name=ContainerNames.CALRISSIAN.value,
             image="terradue/calrissian:0.11.0-sprint1",  # overide as env var?
             command=["calrissian"],
             args=self._get_calrissian_args(),
-            env=[env],
+            env=env_vars,
             volume_mounts=volume_mounts,
         )
 
