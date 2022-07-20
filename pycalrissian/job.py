@@ -19,7 +19,7 @@ class ContainerNames(Enum):
     SIDECAR_OUTPUT = "sidecar-container-output"
 
 
-class CalrissianJob(object):
+class CalrissianJob:
     def __init__(
         self,
         cwl: Dict,
@@ -122,7 +122,7 @@ class CalrissianJob(object):
             def increase_indent(self, flow=False, *args, **kwargs):
                 return super().increase_indent(flow=flow, indentless=False)
 
-        with open(file_path, "w") as outfile:
+        with open(file_path, "w", encoding="utf-8") as outfile:
             yaml.dump(
                 self.runtime_context.api_client.sanitize_for_serialization(
                     self.to_k8s_job()

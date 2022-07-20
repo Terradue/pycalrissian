@@ -16,7 +16,7 @@ class JobStatus(Enum):
     SUCCEEDED = "succeeded"
 
 
-class CalrissianExecution(object):
+class CalrissianExecution:
     def __init__(self, job: CalrissianJob, runtime_context: CalrissianContext) -> None:
         self.job = job
         self.runtime_context = runtime_context
@@ -48,45 +48,40 @@ class CalrissianExecution(object):
                 return JobStatus.SUCCEEDED
             if response.status.failed:
                 return JobStatus.FAILED
+            return None
         except ApiException as e:
-            logger.error("Exception when calling get status: %s\n" % e)
+            logger.error(f"Exception when calling get status: {e}\n")
             raise e
 
     def is_complete(self) -> bool:
         """Returns True if the job execution is completed (success or failed)"""
-        if self.get_status() in [JobStatus.SUCCEEDED, JobStatus.FAILED]:
-            return True
-        else:
-            return False
+        return self.get_status() in [JobStatus.SUCCEEDED, JobStatus.FAILED]
 
     def is_succeeded(self) -> bool:
         """Returns True if the job execution is completed and succeeded"""
-        if self.get_status() in [JobStatus.SUCCEEDED]:
-            return True
-        else:
-            return False
+        return self.get_status() in [JobStatus.SUCCEEDED]
 
     def is_active(self) -> bool:
         """Returns True if the job execution is on-going"""
-        if self.get_status() in [JobStatus.ACTIVE]:
-            return True
-        else:
-            return False
+        return self.get_status() in [JobStatus.ACTIVE]
 
     def get_output(self) -> Dict:
         """Returns the job output"""
         if self.is_succeeded:
             return json.loads(self._get_container_log(ContainerNames.SIDECAR_OUTPUT))
+        return None
 
     def get_log(self):
         """Returns the job execution log"""
         if self.is_complete:
             return self._get_container_log(ContainerNames.CALRISSIAN)
+        return None
 
     def get_usage_report(self) -> Dict:
         """Returns the job usage report"""
         if self.is_complete:
             return json.loads(self._get_container_log(ContainerNames.SIDECAR_USAGE))
+        return None
 
     def _get_container_log(self, container):
 
@@ -109,7 +104,7 @@ class CalrissianExecution(object):
             ).data.decode("utf-8")
 
         except ApiException as e:
-            print("Exception when calling get status: %s\n" % e)
+            logger.error(f"Exception when calling get status: {e}\n")
             raise e
 
     def get_start_time(self):
@@ -122,8 +117,9 @@ class CalrissianExecution(object):
             )
             if response.status.start_time is not None:
                 return response.status.start_time
+            return None
         except ApiException as e:
-            print("Exception when calling get status: %s\n" % e)
+            logger.error(f"Exception when calling get status: {e}\n")
             raise e
 
     def get_completion_time(self):
@@ -136,10 +132,11 @@ class CalrissianExecution(object):
             )
             if response.status.completion_time is not None:
                 return response.status.completion_time
-            elif response.status.conditions is not None:
+            if response.status.conditions is not None:
                 return response.status.conditions[0].last_transition_time
+            return None
         except ApiException as e:
-            print("Exception when calling get status: %s\n" % e)
+            logger.error(f"Exception when calling get status: {e}\n")
             raise e
 
     def monitor(self, interval: int = 5) -> None:

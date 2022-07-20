@@ -10,7 +10,7 @@ from kubernetes.client.rest import ApiException
 from loguru import logger
 
 
-class CalrissianContext(object):
+class CalrissianContext:
     def __init__(
         self,
         namespace: str,
@@ -189,7 +189,6 @@ class CalrissianContext(object):
                 read_methods[read_method](self.namespace)
                 created = True
         except ApiException as e:
-            print(e.status)
             if e.status == 404:
                 created = False
 
@@ -227,21 +226,20 @@ class CalrissianContext(object):
             logger.info(f"namespace {self.namespace} exists, skipping creation")
             return self.core_v1_api.read_namespace(name=self.namespace)
 
-        else:
-            logger.info(f"creating namespace {self.namespace}")
-            try:
-                body = client.V1Namespace(
-                    metadata=client.V1ObjectMeta(
-                        name=self.namespace, labels=job_labels
-                    )  # noqa: E501
-                )
-                response = self.core_v1_api.create_namespace(
-                    body=body, async_req=False
+        logger.info(f"creating namespace {self.namespace}")
+        try:
+            body = client.V1Namespace(
+                metadata=client.V1ObjectMeta(
+                    name=self.namespace, labels=job_labels
                 )  # noqa: E501
-                return response
-            except ApiException as e:
-                logger.error(f"namespace {self.namespace} creation failed")
-                raise e
+            )
+            response = self.core_v1_api.create_namespace(
+                body=body, async_req=False
+            )  # noqa: E501
+            return response
+        except ApiException as e:
+            logger.error(f"namespace {self.namespace} creation failed, {e}\n")
+            raise e
 
     def create_role(
         self,
@@ -257,27 +255,27 @@ class CalrissianContext(object):
                 name=name, namespace=self.namespace
             )
 
-        else:
-            metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
+        metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
 
-            rule = client.V1PolicyRule(
-                api_groups=api_groups,
-                resources=resources,
-                verbs=verbs,
-            )
+        rule = client.V1PolicyRule(
+            api_groups=api_groups,
+            resources=resources,
+            verbs=verbs,
+        )
 
-            body = client.V1Role(metadata=metadata, rules=[rule])
+        body = client.V1Role(metadata=metadata, rules=[rule])
 
-            try:
-                response = (
-                    self.rbac_authorization_v1_api.create_namespaced_role(  # noqa: E501
-                        self.namespace, body, pretty=True
-                    )
+        try:
+            response = (
+                self.rbac_authorization_v1_api.create_namespaced_role(  # noqa: E501
+                    self.namespace, body, pretty=True
                 )
-                return response
+            )
+            return response
 
-            except ApiException as e:
-                raise e
+        except ApiException as e:
+            logger.error(f"Exception when calling get status: {e}\n")
+            raise e
 
     def create_role_binding(self, name: str, role: str):
 
@@ -287,31 +285,29 @@ class CalrissianContext(object):
                 name=name, namespace=self.namespace
             )
 
-        else:
+        metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
 
-            metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
+        role_ref = client.V1RoleRef(api_group="", kind="Role", name=role)
 
-            role_ref = client.V1RoleRef(api_group="", kind="Role", name=role)
+        subject = client.models.V1Subject(
+            api_group="",
+            kind="ServiceAccount",
+            name="default",
+            namespace=self.namespace,
+        )
 
-            subject = client.models.V1Subject(
-                api_group="",
-                kind="ServiceAccount",
-                name="default",
-                namespace=self.namespace,
+        body = client.V1RoleBinding(
+            metadata=metadata, role_ref=role_ref, subjects=[subject]
+        )  # noqa: E501
+
+        try:
+            response = self.rbac_authorization_v1_api.create_namespaced_role_binding(  # noqa: E501
+                self.namespace, body, pretty=True
             )
-
-            body = client.V1RoleBinding(
-                metadata=metadata, role_ref=role_ref, subjects=[subject]
-            )  # noqa: E501
-
-            try:
-                response = self.rbac_authorization_v1_api.create_namespaced_role_binding(  # noqa: E501
-                    self.namespace, body, pretty=True
-                )
-                return response
-            except ApiException as e:
-
-                raise e
+            return response
+        except ApiException as e:
+            logger.error(f"Exception when calling get status: {e}\n")
+            raise e
 
     def create_pvc(
         self,
@@ -327,29 +323,27 @@ class CalrissianContext(object):
                 name=name, namespace=self.namespace
             )
 
-        else:
+        metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
 
-            metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
+        spec = client.V1PersistentVolumeClaimSpec(
+            access_modes=access_modes,
+            resources=client.V1ResourceRequirements(
+                requests={"storage": size}
+            ),  # noqa: E501
+        )
 
-            spec = client.V1PersistentVolumeClaimSpec(
-                access_modes=access_modes,
-                resources=client.V1ResourceRequirements(
-                    requests={"storage": size}
-                ),  # noqa: E501
+        spec.storage_class_name = storage_class
+
+        body = client.V1PersistentVolumeClaim(metadata=metadata, spec=spec)
+
+        try:
+            response = self.core_v1_api.create_namespaced_persistent_volume_claim(  # noqa: E501
+                self.namespace, body, pretty=True
             )
-
-            spec.storage_class_name = storage_class
-
-            body = client.V1PersistentVolumeClaim(metadata=metadata, spec=spec)
-
-            try:
-                response = self.core_v1_api.create_namespaced_persistent_volume_claim(  # noqa: E501
-                    self.namespace, body, pretty=True
-                )
-                return response
-            except ApiException as e:
-
-                raise e
+            return response
+        except ApiException as e:
+            logger.error(f"Exception when calling get status: {e}\n")
+            raise e
 
     def create_configmap(
         self,
@@ -406,34 +400,32 @@ class CalrissianContext(object):
                 namespace=self.namespace, name=name
             )  # noqa: E501
 
-        else:
+        metadata = {"name": name, "namespace": self.namespace}
 
-            metadata = {"name": name, "namespace": self.namespace}
+        data = {
+            ".dockerconfigjson": base64.b64encode(
+                json.dumps(self.image_pull_secrets).encode()
+            ).decode()
+        }
 
-            data = {
-                ".dockerconfigjson": base64.b64encode(
-                    json.dumps(self.image_pull_secrets).encode()
-                ).decode()
-            }
+        secret = client.V1Secret(
+            api_version="v1",
+            data=data,
+            kind="Secret",
+            metadata=metadata,
+            type="kubernetes.io/dockerconfigjson",
+        )
 
-            secret = client.V1Secret(
-                api_version="v1",
-                data=data,
-                kind="Secret",
-                metadata=metadata,
-                type="kubernetes.io/dockerconfigjson",
+        try:
+            response = self.core_v1_api.create_namespaced_secret(
+                namespace=self.namespace,
+                body=secret,
+                pretty=True,
             )
+            return response
 
-            try:
-                response = self.core_v1_api.create_namespaced_secret(
-                    namespace=self.namespace,
-                    body=secret,
-                    pretty=True,
-                )
-                return response
-
-            except ApiException as e:
-                raise e
+        except ApiException as e:
+            raise e
 
     def patch_service_account(self):
         # adds a secret to the namespace default service account
