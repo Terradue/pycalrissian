@@ -116,12 +116,6 @@ class CalrissianContext:
         except ApiException as e:
             logger.error(f"Exception when delete namespaced pod {name}: {e}\n")
 
-    def get_tmp_dir(self):
-        """Returns the tmp directory path"""
-
-    def get_output_dir(self):
-        """Returns the output directory path"""
-
     @staticmethod
     def _get_api_client(kubeconfig_file: TextIO = None):
 
