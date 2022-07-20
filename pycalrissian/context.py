@@ -12,6 +12,8 @@ from loguru import logger
 
 
 class CalrissianContext:
+    """Creates a kubernetes namespace to run calrissian jobs"""
+
     def __init__(
         self,
         namespace: str,
@@ -20,7 +22,19 @@ class CalrissianContext:
         image_pull_secrets: Dict = None,
         kubeconfig_file: TextIO = None,
     ):
+        """Creates a CalrissianContext object
 
+        Args:
+            namespace (str): name of the kubernetes namespace
+            storage_class (str): name of the storage class for the RWX persistent volume claim    # noqa: E501
+            volume_size (str): size for the RWX volume (e.g. 10G)
+            image_pull_secrets (dict): a dictionary with the image pull secrets
+            kubeconfig_file (TextIO): path to the kubeconfig file to access the kubernetes cluster # noqa: E501
+
+        Returns:
+            None: none
+
+        """
         self.kubeconfig_file = kubeconfig_file
 
         self.api_client = self._get_api_client(self.kubeconfig_file)
@@ -36,7 +50,14 @@ class CalrissianContext:
         self.secret_name = "container-rg"
 
     def initialise(self):
+        """Create the kubernetes resources to run a Calrissian job
 
+        Arg:
+            None
+
+        Returns:
+            None
+        """
         # create namespace
         if not self.is_namespace_created():
             logger.info(f"create namespace {self.namespace}")
