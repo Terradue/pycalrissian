@@ -63,6 +63,7 @@ class TestCalrissianJob(unittest.TestCase):
             debug=True,
             max_cores=2,
             max_ram="4G",
+            keep_pods=True,
         )
 
         job.to_yaml("job.yml")
