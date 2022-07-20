@@ -1,0 +1,14 @@
+site_name: pycalrissian
+
+theme:
+  name: material
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Introduction: 'index.md'
+  - Installation: 'installation.md'
+  - Getting started: 'gettingstarted.md'

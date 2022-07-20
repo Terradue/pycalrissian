@@ -34,24 +34,28 @@ class TestCalrissianExecution(unittest.TestCase):
                     "password": password,
                     "email": email,
                     "auth": auth,
-                }
+                },
+                "registry.gitlab.com": {"auth": ""},
             }
         }
 
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="longhorn",  # "microk8s-hostpath",
+            storage_class="longhorn",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
 
         session.initialise()
 
-        with open("tests/simple.cwl", "r") as stream:
-
+        with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
 
-        params = {"message": "hello world!"}
+        params = {
+            "post_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A",  # noqa: E501
+            "pre_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210703_0_L2A",  # noqa: E501
+            "aoi": "136.659,-35.96,136.923,-35.791",
+        }
 
         pod_env_vars = {"A": "1", "B": "2"}
 
@@ -59,11 +63,12 @@ class TestCalrissianExecution(unittest.TestCase):
             cwl=cwl,
             params=params,
             runtime_context=session,
+            cwl_entry_point="dnbr",
             pod_env_vars=pod_env_vars,
-            debug=True,
+            debug=False,
             max_cores=2,
             max_ram="4G",
-            keep_pods=True,
+            keep_pods=False,
             backoff_limit=1,
         )
 
@@ -72,16 +77,21 @@ class TestCalrissianExecution(unittest.TestCase):
         execution.submit()
 
         execution.monitor(interval=5)
-        # while execution.is_active():
-        #     print("active")
-        #     time.sleep(5)
+
+        log = execution.get_log()
+        print(log)
+        usage = execution.get_usage_report()
+
+        print(usage)
+        print(type(usage))
+
+        output = execution.get_output()
+        print(output)
+
+        print(execution.get_start_time())
+        print(execution.get_completion_time())
 
         print(f"complete {execution.is_complete()}")
         print(f"succeeded {execution.is_succeeded()}")
 
-        print(execution.get_log())
-        print(execution.get_usage_report())
-        print(execution.get_output())
-
-        print(execution.get_start_time())
-        print(execution.get_completion_time())
+        session.dispose()
