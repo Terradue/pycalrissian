@@ -18,11 +18,12 @@ markdown_extensions:
 
 plugins:
   - search
+  - mkdocs-jupyter
 
 nav:
   - Introduction: 'index.md'
   - Installation: 'installation.md'
-  - Getting started: 'gettingstarted.md'
+  - Getting started: 'gettingstarted.ipynb'
   - API:
     - pycalrissian.CalrissianContext : api/pycalrissian/context.md
     - pycalrissian.CalrissianJob : api/pycalrissian/job.md
