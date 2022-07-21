@@ -2,16 +2,15 @@
 
 _pycalrissian_ is a conda package available under Terradue conda channel.
 
-To install _pycalrissian_, use `conda` (slower) or `mamba` (faster) to install snapista.
+To install _pycalrissian_, use `conda` (slower) or `mamba` (faster).
 
 On a terminal, run:
 
-```mamba install -c terradue pycalrissian```
+```
+mamba install -c terradue pycalrissian
+```
 
-From your Python script/notebook, you can now import snapista and use its modules.
-```
-conda install -c terradue pycalrissian
-```
+From your Python script/notebook, you can now import _pycalrissian_ and use its modules.
 
 **Development version**
 
