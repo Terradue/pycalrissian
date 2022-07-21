@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import time
+from http import HTTPStatus
 from typing import Dict, TextIO
 
 from kubernetes import client, config
@@ -217,7 +218,7 @@ class CalrissianContext:
                 read_methods[read_method](self.namespace)
                 created = True
         except ApiException as e:
-            if e.status == 404:
+            if e.status == HTTPStatus.NOT_FOUND:
                 created = False
 
         return created
@@ -248,6 +249,18 @@ class CalrissianContext:
 
         return self.is_object_created("read_namespaced_secret", **kwargs)
 
+    @staticmethod
+    def retry(fun, max_tries=10, interval=5, **kwargs):
+        for i in range(max_tries):
+            try:
+                time.sleep(interval)
+                if fun(**kwargs):
+                    return True
+            except Exception:
+                continue
+        if i == max_tries:
+            return False
+
     def create_namespace(self, job_labels: dict = None) -> client.V1Namespace:
 
         if self.is_namespace_created():
@@ -265,8 +278,12 @@ class CalrissianContext:
                 body=body, async_req=False
             )  # noqa: E501
 
-            while not self.is_namespace_created():
-                time.sleep(5)
+            if not self.retry(self.is_namespace_created):
+                logger.info(
+                    f"namespace {self.namespace} not created in "
+                    "the time interval assigned"
+                )
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
 
             logger.info(f"namespace {self.namespace} created")
             return response
@@ -304,6 +321,12 @@ class CalrissianContext:
                     self.namespace, body, pretty=True
                 )
             )
+
+            if not self.retry(self.is_role_created, name=name):
+                logger.info(f"role {name} not created " "in the time interval assigned")
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+
+            logger.info(f"role {name} created")
             return response
 
         except ApiException as e:
@@ -337,6 +360,13 @@ class CalrissianContext:
             response = self.rbac_authorization_v1_api.create_namespaced_role_binding(  # noqa: E501
                 self.namespace, body, pretty=True
             )
+
+            if not self.retry(self.is_role_binding_created, name=name):
+                logger.info(
+                    f"role binding {name} not created " "in the time interval assigned"
+                )
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            logger.info(f"role binding {name} created")
             return response
         except ApiException as e:
             logger.error(f"Exception when calling get status: {e}\n")
@@ -373,6 +403,11 @@ class CalrissianContext:
             response = self.core_v1_api.create_namespaced_persistent_volume_claim(  # noqa: E501
                 self.namespace, body, pretty=True
             )
+
+            if not self.retry(self.is_pvc_created, name=name):
+                logger.info(f"pvc {name} not created " "in the time interval assigned")
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            logger.info(f"pvc {name} created")
             return response
         except ApiException as e:
             logger.error(f"Exception when calling get status: {e}\n")
@@ -417,6 +452,13 @@ class CalrissianContext:
                 body=config_map,
                 pretty=True,
             )
+
+            if not self.retry(self.is_config_map_created, name=name):
+                logger.info(
+                    f"config map {name} not created " "in the time interval assigned"
+                )
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            logger.info(f"config map {name} created")
             return response
 
         except ApiException as e:
@@ -455,6 +497,14 @@ class CalrissianContext:
                 body=secret,
                 pretty=True,
             )
+
+            if not self.retry(self.is_image_pull_secret_created, name=name):
+                logger.info(
+                    f"image pull secret {name} not created "
+                    "in the time interval assigned"
+                )
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+
             return response
 
         except ApiException as e:
