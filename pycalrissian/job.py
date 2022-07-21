@@ -68,17 +68,17 @@ class CalrissianJob:
             )
         )
         logger.info(f"job name: {self.job_name}")
-        logger.info("create CWL configMap")
+        logger.info("create CWL config map")
         self._create_cwl_cm()
-        logger.info("create processing parameters configMap")
+        logger.info("create processing parameters config map")
         self._create_params_cm()
 
         if self.pod_env_vars:
-            logger.info("Create Pod environment variables configMap")
+            logger.info("create pod environment variables config map")
             self._create_pod_env_vars_cm()
 
         if self.pod_node_selector:
-            logger.info("Create Pod node selector configMap")
+            logger.info("create Pod node selector config map")
             self._create_pod_node_selector_cm()
 
         self.calrissian_base_path = "/calrissian"

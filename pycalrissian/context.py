@@ -125,6 +125,15 @@ class CalrissianContext:
             response = self.core_v1_api.delete_namespace(
                 name=self.namespace, pretty=True, grace_period_seconds=0
             )
+
+            if not self.retry(self.is_namespace_deleted):
+                logger.info(
+                    f"namespace {self.namespace} not deleted "
+                    "in the time interval assigned"
+                )
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+
+            logger.info(f"namespace {self.namespace} deleted")
             return response
 
         except ApiException as e:
@@ -226,6 +235,10 @@ class CalrissianContext:
     def is_namespace_created(self, **kwargs) -> bool:
 
         return self.is_object_created("read_namespace", **kwargs)
+
+    def is_namespace_deleted(self, **kwargs) -> bool:
+        """Helper function for retry in dispose"""
+        return not self.is_namespace_created()
 
     def is_role_binding_created(self, **kwargs) -> bool:
 
@@ -504,7 +517,7 @@ class CalrissianContext:
                     "in the time interval assigned"
                 )
                 raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
-
+            logger.info(f"image pull secret {name} created")
             return response
 
         except ApiException as e:
