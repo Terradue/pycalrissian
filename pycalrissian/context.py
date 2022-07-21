@@ -224,8 +224,9 @@ class CalrissianContext:
             else:
                 read_methods[read_method](self.namespace)
                 created = True
-        except ApiException as e:
-            if e.status == HTTPStatus.NOT_FOUND:
+        except ApiException as exc:
+            #TODO Here we could consider failed whatever type of exception
+            if exc.status.value >= 400 and exc.status.value < 500:
                 created = False
 
         return created
@@ -266,7 +267,11 @@ class CalrissianContext:
             try:
                 time.sleep(interval)
                 return fun(**kwargs)
-            except Exception:
+            except ApiException as exc:
+                if(exc.status.value < 500 and exc.status.value != 429):
+                    #Useless to retry against a 4xx/not-429 
+                    raise exc
+            except Exception: 
                 continue
         if i == max_tries:
             raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
@@ -331,7 +336,7 @@ class CalrissianContext:
             return response
 
         except ApiException as e:
-            logger.error(f"role {name} not created " "in the time interval assigned: Exception when calling get status: {e}\n")
+            logger.error(f"role {name} not created in the time interval assigned: Exception when calling get status: {e}\n")
             raise e
 
     def create_role_binding(self, name: str, role: str):
@@ -454,7 +459,7 @@ class CalrissianContext:
 
         except ApiException as e:
             logger.info(
-                    f"config map {name} not created " "in the time interval assigned"
+                    f"config map {name} not created in the time interval assigned"
                 )
             raise e
 
