@@ -148,9 +148,9 @@ class CalrissianExecution:
                 time.sleep(interval)
 
             if self.is_complete():
-                logger.info(f"exection is complete {self.is_complete()}")
+                logger.info("execution is complete")
             if self.is_succeeded():
-                logger.info("outcome: success!")
+                logger.info("the outcome is: success!")
 
         else:
             logger.warning("job is not submitted")
