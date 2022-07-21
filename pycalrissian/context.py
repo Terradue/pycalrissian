@@ -126,17 +126,15 @@ class CalrissianContext:
                 name=self.namespace, pretty=True, grace_period_seconds=0
             )
 
-            if not self.retry(self.is_namespace_deleted):
-                logger.info(
-                    f"namespace {self.namespace} not deleted "
-                    "in the time interval assigned"
-                )
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
-
+            self.retry(self.is_namespace_deleted)
             logger.info(f"namespace {self.namespace} deleted")
             return response
 
         except ApiException as e:
+            logger.info(
+                    f"namespace {self.namespace} not deleted "
+                    "in the time interval assigned"
+                )
             raise e
 
     def delete_pod(self, name):
@@ -267,12 +265,11 @@ class CalrissianContext:
         for i in range(max_tries):
             try:
                 time.sleep(interval)
-                if fun(**kwargs):
-                    return True
+                return fun(**kwargs)
             except Exception:
                 continue
         if i == max_tries:
-            return False
+            raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
 
     def create_namespace(self, job_labels: dict = None) -> client.V1Namespace:
 
@@ -291,13 +288,7 @@ class CalrissianContext:
                 body=body, async_req=False
             )  # noqa: E501
 
-            if not self.retry(self.is_namespace_created):
-                logger.info(
-                    f"namespace {self.namespace} not created in "
-                    "the time interval assigned"
-                )
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
-
+            self.retry(self.is_namespace_created)
             logger.info(f"namespace {self.namespace} created")
             return response
         except ApiException as e:
@@ -335,15 +326,12 @@ class CalrissianContext:
                 )
             )
 
-            if not self.retry(self.is_role_created, name=name):
-                logger.info(f"role {name} not created " "in the time interval assigned")
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
-
+            self.retry(self.is_role_created, name=name)
             logger.info(f"role {name} created")
             return response
 
         except ApiException as e:
-            logger.error(f"Exception when calling get status: {e}\n")
+            logger.error(f"role {name} not created " "in the time interval assigned: Exception when calling get status: {e}\n")
             raise e
 
     def create_role_binding(self, name: str, role: str):
@@ -374,15 +362,11 @@ class CalrissianContext:
                 self.namespace, body, pretty=True
             )
 
-            if not self.retry(self.is_role_binding_created, name=name):
-                logger.info(
-                    f"role binding {name} not created " "in the time interval assigned"
-                )
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            self.retry(self.is_role_binding_created, name=name)
             logger.info(f"role binding {name} created")
             return response
         except ApiException as e:
-            logger.error(f"Exception when calling get status: {e}\n")
+            logger.error(f"role binding {name} not created in the time interval assigned: Exception when calling get status: {e}\n")
             raise e
 
     def create_pvc(
@@ -417,13 +401,11 @@ class CalrissianContext:
                 self.namespace, body, pretty=True
             )
 
-            if not self.retry(self.is_pvc_created, name=name):
-                logger.info(f"pvc {name} not created " "in the time interval assigned")
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            self.retry(self.is_pvc_created, name=name)
             logger.info(f"pvc {name} created")
             return response
         except ApiException as e:
-            logger.error(f"Exception when calling get status: {e}\n")
+            logger.error(f"pvc {name} not created in the time interval assigned: Exception when calling get status: {e}\n")
             raise e
 
     def create_configmap(
@@ -466,15 +448,14 @@ class CalrissianContext:
                 pretty=True,
             )
 
-            if not self.retry(self.is_config_map_created, name=name):
-                logger.info(
-                    f"config map {name} not created " "in the time interval assigned"
-                )
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            self.retry(self.is_config_map_created, name=name)
             logger.info(f"config map {name} created")
             return response
 
         except ApiException as e:
+            logger.info(
+                    f"config map {name} not created " "in the time interval assigned"
+                )
             raise e
 
     def create_image_pull_secret(
@@ -511,16 +492,15 @@ class CalrissianContext:
                 pretty=True,
             )
 
-            if not self.retry(self.is_image_pull_secret_created, name=name):
-                logger.info(
-                    f"image pull secret {name} not created "
-                    "in the time interval assigned"
-                )
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            self.retry(self.is_image_pull_secret_created, name=name)
             logger.info(f"image pull secret {name} created")
             return response
 
         except ApiException as e:
+            logger.info(
+                    f"image pull secret {name} not created "
+                    "in the time interval assigned"
+                )
             raise e
 
     def patch_service_account(self):
