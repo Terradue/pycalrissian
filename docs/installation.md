@@ -14,4 +14,8 @@ From your Python script/notebook, you can now import _pycalrissian_ and use its 
 
 **Development version**
 
-```mamba install -c terradue/label/dev pycalrissian```
+Install the development version with:
+
+```
+mamba install -c terradue/label/dev pycalrissian
+```
