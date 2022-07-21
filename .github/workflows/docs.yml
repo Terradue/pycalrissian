@@ -32,4 +32,5 @@ jobs:
           pdocs as_markdown --output_dir docs/api/ --exclude_source --overwrite pycalrissian
 
       - run: pip install mkdocs-material
+      - run: pip install mkdocs-jupyter
       - run: mkdocs gh-deploy --force
