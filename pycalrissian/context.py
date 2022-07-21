@@ -208,56 +208,45 @@ class CalrissianContext:
             "read_namespaced_secret"
         ] = self.core_v1_api.read_namespaced_secret  # noqa: E501
 
-        created = False
+        if read_method in [
+            "read_namespaced_config_map",
+            "read_namespaced_role",
+            "read_namespaced_role_binding",
+            "read_namespaced_persistent_volume_claim",
+            "read_namespaced_secret",
+        ]:
+            read_methods[read_method](namespace=self.namespace, **kwargs)
+        else:
+            read_methods[read_method](self.namespace)
 
-        try:
 
-            if read_method in [
-                "read_namespaced_config_map",
-                "read_namespaced_role",
-                "read_namespaced_role_binding",
-                "read_namespaced_persistent_volume_claim",
-                "read_namespaced_secret",
-            ]:
-                read_methods[read_method](namespace=self.namespace, **kwargs)
-                created = True
-            else:
-                read_methods[read_method](self.namespace)
-                created = True
-        except ApiException as exc:
-            #TODO Here we could consider failed whatever type of exception
-            if exc.status.value >= 400 and exc.status.value < 500:
-                created = False
-
-        return created
-
-    def is_namespace_created(self, **kwargs) -> bool:
+    def is_namespace_created(self, **kwargs):
 
         return self.is_object_created("read_namespace", **kwargs)
 
-    def is_namespace_deleted(self, **kwargs) -> bool:
+    def is_namespace_deleted(self, **kwargs):
         """Helper function for retry in dispose"""
         return not self.is_namespace_created()
 
-    def is_role_binding_created(self, **kwargs) -> bool:
+    def is_role_binding_created(self, **kwargs):
 
         return self.is_object_created("read_namespaced_role_binding", **kwargs)
 
-    def is_role_created(self, **kwargs) -> bool:
+    def is_role_created(self, **kwargs):
 
         return self.is_object_created("read_namespaced_role", **kwargs)
 
-    def is_config_map_created(self, **kwargs) -> bool:
+    def is_config_map_created(self, **kwargs):
 
         return self.is_object_created("read_namespaced_config_map", **kwargs)
 
-    def is_pvc_created(self, **kwargs) -> bool:
+    def is_pvc_created(self, **kwargs):
 
         return self.is_object_created(
             "read_namespaced_persistent_volume_claim", **kwargs
         )  # noqa: E501
 
-    def is_image_pull_secret_created(self, **kwargs) -> bool:
+    def is_image_pull_secret_created(self, **kwargs):
 
         return self.is_object_created("read_namespaced_secret", **kwargs)
 
