@@ -207,18 +207,22 @@ class CalrissianContext:
         read_methods[
             "read_namespaced_secret"
         ] = self.core_v1_api.read_namespaced_secret  # noqa: E501
-
-        if read_method in [
-            "read_namespaced_config_map",
-            "read_namespaced_role",
-            "read_namespaced_role_binding",
-            "read_namespaced_persistent_volume_claim",
-            "read_namespaced_secret",
-        ]:
-            read_methods[read_method](namespace=self.namespace, **kwargs)
-        else:
-            read_methods[read_method](self.namespace)
-
+        try:
+            if read_method in [
+                "read_namespaced_config_map",
+                "read_namespaced_role",
+                "read_namespaced_role_binding",
+                "read_namespaced_persistent_volume_claim",
+                "read_namespaced_secret",
+            ]:
+                read_methods[read_method](namespace=self.namespace, **kwargs)
+            else:
+                read_methods[read_method](self.namespace)
+        except ApiException as exc:
+            if exc.status == HTTPStatus.NOT_FOUND:
+                return None
+            else: raise exc
+        return read_methods
 
     def is_namespace_created(self, **kwargs):
 
