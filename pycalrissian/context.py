@@ -127,7 +127,7 @@ class CalrissianContext:
                 name=self.namespace, pretty=True, grace_period_seconds=0
             )
 
-            if self.retry(self.is_namespace_deleted):
+            if not self.retry(self.is_namespace_deleted):
                 raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
             logger.info(f"namespace {self.namespace} deleted")
             return response
