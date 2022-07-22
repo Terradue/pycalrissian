@@ -126,8 +126,8 @@ class CalrissianContext:
                 name=self.namespace, pretty=True, grace_period_seconds=0
             )
 
-            if not self.retry(self.is_namespace_deleted):
-                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            # if not self.retry(self.dispose):
+            #     raise ApiException()
             logger.info(f"namespace {self.namespace} deleted")
             return response
 
@@ -269,7 +269,7 @@ class CalrissianContext:
             except Exception:
                 continue
         if i == max_tries:
-            raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
+            raise ApiException()
 
     def create_namespace(self, job_labels: dict = None) -> client.V1Namespace:
 
@@ -289,7 +289,7 @@ class CalrissianContext:
             )  # noqa: E501
 
             if not self.retry(self.is_namespace_created):
-                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
+                raise ApiException(http_resp=response)
             logger.info(f"namespace {self.namespace} created")
             return response
         except ApiException as e:
@@ -328,7 +328,7 @@ class CalrissianContext:
             )
 
             if not self.retry(self.is_role_created, name=name):
-                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
+                raise ApiException(http_resp=response)
             logger.info(f"role {name} created")
             return response
 
@@ -368,7 +368,7 @@ class CalrissianContext:
             )
 
             if not self.retry(self.is_role_binding_created, name=name):
-                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
+                raise ApiException(http_resp=response)
             logger.info(f"role binding {name} created")
             return response
         except ApiException as e:
@@ -411,7 +411,7 @@ class CalrissianContext:
             )
 
             if not self.retry(self.is_pvc_created, name=name):
-                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
+                raise ApiException(http_resp=response)
             logger.info(f"pvc {name} created")
             return response
         except ApiException as e:
@@ -462,7 +462,7 @@ class CalrissianContext:
             )
 
             if not self.retry(self.is_config_map_created, name=name):
-                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
+                raise ApiException(http_resp=response)
             logger.info(f"config map {name} created")
             return response
 
@@ -505,7 +505,7 @@ class CalrissianContext:
             )
 
             if not self.retry(self.is_image_pull_secret_created, name=name):
-                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
+                raise ApiException(http_resp=response)
             logger.info(f"image pull secret {name} created")
             return response
 
@@ -542,27 +542,3 @@ class CalrissianContext:
             )
         except ApiException as e:
             raise e
-
-    # def create_roles(self):
-
-    #     roles = {}
-
-    #     roles["pod-manager-role"] = {
-    #         "verbs": ["create", "patch", "delete", "list", "watch"],
-    #         "role_binding": "pod-manager-default-binding",
-    #     }
-
-    #     roles["log-reader-role"] = {
-    #         "verbs": ["get", "list"],
-    #         "role_binding": "log-reader-default-binding",
-    #     }
-
-    #     for role, value in roles.items():
-
-    #         self.create_role(
-    #             name=role,
-    #             verbs=value["verbs"],
-    #             resources=["pods", "pods/log"],
-    #             api_groups=["*"],
-    #         )
-    #         self.create_role_binding(name=value["role_binding"], role=role)
