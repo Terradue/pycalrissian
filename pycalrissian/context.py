@@ -1,5 +1,4 @@
 import base64
-from http.client import NOT_FOUND
 import json
 import os
 import time
@@ -134,9 +133,9 @@ class CalrissianContext:
 
         except ApiException as e:
             logger.info(
-                    f"namespace {self.namespace} not deleted "
-                    "in the time interval assigned"
-                )
+                f"namespace {self.namespace} not deleted "
+                "in the time interval assigned"
+            )
             raise e
 
     def delete_pod(self, name):
@@ -223,7 +222,8 @@ class CalrissianContext:
         except ApiException as exc:
             if exc.status == HTTPStatus.NOT_FOUND:
                 return None
-            else: raise exc
+            else:
+                raise exc
         return read_methods
 
     def is_namespace_created(self, **kwargs):
@@ -263,10 +263,10 @@ class CalrissianContext:
                 time.sleep(interval)
                 return fun(**kwargs)
             except ApiException as exc:
-                if(exc.status.value < 500 and exc.status.value != 429):
-                    #Useless to retry against a 4xx/not-429 
+                if exc.status.value < 500 and exc.status.value != 429:
+                    # Useless to retry against a 4xx/not-429
                     raise exc
-            except Exception: 
+            except Exception:
                 continue
         if i == max_tries:
             raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
@@ -333,7 +333,10 @@ class CalrissianContext:
             return response
 
         except ApiException as e:
-            logger.error(f"role {name} not created in the time interval assigned: Exception when calling get status: {e}\n")
+            logger.error(
+                f"role {name} not created in the time interval assigned: "
+                f"Exception when calling get status: {e}\n"
+            )
             raise e
 
     def create_role_binding(self, name: str, role: str):
@@ -369,7 +372,10 @@ class CalrissianContext:
             logger.info(f"role binding {name} created")
             return response
         except ApiException as e:
-            logger.error(f"role binding {name} not created in the time interval assigned: Exception when calling get status: {e}\n")
+            logger.error(
+                f"role binding {name} not created in the time interval assigned:"
+                f" Exception when calling get status: {e}\n"
+            )
             raise e
 
     def create_pvc(
@@ -409,7 +415,10 @@ class CalrissianContext:
             logger.info(f"pvc {name} created")
             return response
         except ApiException as e:
-            logger.error(f"pvc {name} not created in the time interval assigned: Exception when calling get status: {e}\n")
+            logger.error(
+                f"pvc {name} not created in the time interval assigned:"
+                f" Exception when calling get status: {e}\n"
+            )
             raise e
 
     def create_configmap(
@@ -458,9 +467,7 @@ class CalrissianContext:
             return response
 
         except ApiException as e:
-            logger.info(
-                    f"config map {name} not created in the time interval assigned"
-                )
+            logger.info(f"config map {name} not created in the time interval assigned")
             raise e
 
     def create_image_pull_secret(
@@ -504,9 +511,8 @@ class CalrissianContext:
 
         except ApiException as e:
             logger.info(
-                    f"image pull secret {name} not created "
-                    "in the time interval assigned"
-                )
+                f"image pull secret {name} not created " "in the time interval assigned"
+            )
             raise e
 
     def patch_service_account(self):

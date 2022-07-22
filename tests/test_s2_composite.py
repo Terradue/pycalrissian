@@ -18,9 +18,9 @@ class TestCalrissianExecution(unittest.TestCase):
 
     def test_job(self):
 
-        username = ""
-        password = ""
-        email = ""
+        username = "fabricebrito"
+        password = "1f54397c-f15c-4be4-b9ea-4220fb2d80ce"
+        email = "fabrice.brito@terradue.com"
         registry = "https://index.docker.io/v1/"
 
         auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
@@ -95,3 +95,4 @@ class TestCalrissianExecution(unittest.TestCase):
         print(f"succeeded {execution.is_succeeded()}")
 
         session.dispose()
+        self.assertTrue(execution.is_succeeded)

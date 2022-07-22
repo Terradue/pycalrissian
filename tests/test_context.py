@@ -112,17 +112,6 @@ class TestCalrissianContext(unittest.TestCase):
 
         self.assertIsInstance(response, V1RoleBinding)
 
-    def test_create_roles(self):
-
-        session = CalrissianContext(
-            namespace=self.namespace, storage_class="dummy", volume_size="1G"
-        )
-
-        if not session.is_namespace_created():
-            session.create_namespace()
-
-        session.create_roles()
-
     def test_create_volume(self):
 
         session = CalrissianContext(
