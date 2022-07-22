@@ -1,4 +1,5 @@
 import base64
+from http.client import NOT_FOUND
 import json
 import os
 import time
@@ -126,7 +127,8 @@ class CalrissianContext:
                 name=self.namespace, pretty=True, grace_period_seconds=0
             )
 
-            self.retry(self.is_namespace_deleted)
+            if not self.retry(self.is_namespace_deleted):
+                raise ApiException(http_resp=HTTPStatus.REQUEST_TIMEOUT)
             logger.info(f"namespace {self.namespace} deleted")
             return response
 
@@ -207,18 +209,22 @@ class CalrissianContext:
         read_methods[
             "read_namespaced_secret"
         ] = self.core_v1_api.read_namespaced_secret  # noqa: E501
-
-        if read_method in [
-            "read_namespaced_config_map",
-            "read_namespaced_role",
-            "read_namespaced_role_binding",
-            "read_namespaced_persistent_volume_claim",
-            "read_namespaced_secret",
-        ]:
-            read_methods[read_method](namespace=self.namespace, **kwargs)
-        else:
-            read_methods[read_method](self.namespace)
-
+        try:
+            if read_method in [
+                "read_namespaced_config_map",
+                "read_namespaced_role",
+                "read_namespaced_role_binding",
+                "read_namespaced_persistent_volume_claim",
+                "read_namespaced_secret",
+            ]:
+                read_methods[read_method](namespace=self.namespace, **kwargs)
+            else:
+                read_methods[read_method](self.namespace)
+        except ApiException as exc:
+            if exc.status == HTTPStatus.NOT_FOUND:
+                return None
+            else: raise exc
+        return read_methods
 
     def is_namespace_created(self, **kwargs):
 
@@ -282,7 +288,8 @@ class CalrissianContext:
                 body=body, async_req=False
             )  # noqa: E501
 
-            self.retry(self.is_namespace_created)
+            if not self.retry(self.is_namespace_created):
+                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
             logger.info(f"namespace {self.namespace} created")
             return response
         except ApiException as e:
@@ -320,7 +327,8 @@ class CalrissianContext:
                 )
             )
 
-            self.retry(self.is_role_created, name=name)
+            if not self.retry(self.is_role_created, name=name):
+                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
             logger.info(f"role {name} created")
             return response
 
@@ -356,7 +364,8 @@ class CalrissianContext:
                 self.namespace, body, pretty=True
             )
 
-            self.retry(self.is_role_binding_created, name=name)
+            if not self.retry(self.is_role_binding_created, name=name):
+                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
             logger.info(f"role binding {name} created")
             return response
         except ApiException as e:
@@ -395,7 +404,8 @@ class CalrissianContext:
                 self.namespace, body, pretty=True
             )
 
-            self.retry(self.is_pvc_created, name=name)
+            if not self.retry(self.is_pvc_created, name=name):
+                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
             logger.info(f"pvc {name} created")
             return response
         except ApiException as e:
@@ -442,7 +452,8 @@ class CalrissianContext:
                 pretty=True,
             )
 
-            self.retry(self.is_config_map_created, name=name)
+            if not self.retry(self.is_config_map_created, name=name):
+                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
             logger.info(f"config map {name} created")
             return response
 
@@ -486,7 +497,8 @@ class CalrissianContext:
                 pretty=True,
             )
 
-            self.retry(self.is_image_pull_secret_created, name=name)
+            if not self.retry(self.is_image_pull_secret_created, name=name):
+                raise ApiException(http_resp=HTTPStatus.NOT_FOUND)
             logger.info(f"image pull secret {name} created")
             return response
 
