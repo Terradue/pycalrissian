@@ -1,0 +1,36 @@
+name: docs
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      # Only rebuild website when docs have changed
+      - 'README.md'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - .github/**
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          pip install pdocs kubernetes loguru pyyaml
+          python setup.py install
+      - name: update API docs
+        run: |
+          pdocs as_markdown --output_dir docs/api/ --exclude_source --overwrite pycalrissian
+
+      - run: pip install mkdocs-material
+      - run: pip install mkdocs-jupyter
+      - run: mkdocs gh-deploy --force
