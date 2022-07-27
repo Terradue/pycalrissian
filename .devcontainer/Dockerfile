@@ -10,7 +10,7 @@ RUN apt-get update -y \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
         ca-certificates \
-        curl sudo git nodejs wget curl git-flow
+        curl sudo git nodejs wget curl git-flow vim
 
 RUN echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME

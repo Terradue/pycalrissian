@@ -2,8 +2,8 @@ import base64
 import os
 import unittest
 
-import yaml
 from kubernetes.client.models.v1_job import V1Job
+from ruamel import yaml
 
 from pycalrissian.context import CalrissianContext
 from pycalrissian.job import CalrissianJob
@@ -47,9 +47,12 @@ class TestCalrissianJob(unittest.TestCase):
 
         session.initialise()
 
-        with open("tests/simple.cwl", "r") as stream:
+        # with open("tests/simple.cwl", "r") as stream:
 
-            cwl = yaml.safe_load(stream)
+        #     cwl = yaml.safe_load(stream)
+        document = "tests/simple.cwl"
+        with open(document) as doc_handle:
+            cwl = yaml.main.round_trip_load(doc_handle, preserve_quotes=True)
 
         params = {"message": "hello world!"}
 

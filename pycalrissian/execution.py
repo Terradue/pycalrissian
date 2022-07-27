@@ -68,8 +68,11 @@ class CalrissianExecution:
     def get_output(self) -> Dict:
         """Returns the job output"""
         if self.is_succeeded:
-            return json.loads(self._get_container_log(ContainerNames.SIDECAR_OUTPUT))
-        return None
+            output = self._get_container_log(ContainerNames.SIDECAR_OUTPUT)
+            print(output)
+            if isinstance(output, dict):
+                return json.loads(output)
+        return {}
 
     def get_log(self):
         """Returns the job execution log"""
@@ -81,7 +84,7 @@ class CalrissianExecution:
         """Returns the job usage report"""
         if self.is_complete:
             return json.loads(self._get_container_log(ContainerNames.SIDECAR_USAGE))
-        return None
+        return {}
 
     def _get_container_log(self, container):
 

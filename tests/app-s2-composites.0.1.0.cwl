@@ -202,6 +202,9 @@ $graph:
       InlineJavascriptRequirement: {}
       DockerRequirement:
         dockerPull: osgeo/gdal
+      ResourceRequirement:
+        coresMax: 4
+        ramMax: 32000
     baseCommand: gdal_translate
     arguments:
       - -co
@@ -268,7 +271,7 @@ $graph:
         outputBinding:
           glob: "."
         type: Directory
-cwlVersion: v1.0
+cwlVersion: v1.1
 $namespaces:
   s: https://schema.org/
 s:softwareVersion: 0.1.0
