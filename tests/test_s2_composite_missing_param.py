@@ -61,7 +61,6 @@ class TestCalrissianExecution(unittest.TestCase):
 
         params = {
             "post_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A",  # noqa: E501
-            "pre_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210703_0_L2A",  # noqa: E501
             "aoi": "136.659,-35.96,136.923,-35.791",
         }
 
@@ -88,8 +87,18 @@ class TestCalrissianExecution(unittest.TestCase):
 
         log = execution.get_log()
         print(log)
-        execution.get_usage_report()
+        usage = execution.get_usage_report()
 
-        execution.get_output()
+        print(usage)
+        print(type(usage))
 
-        self.assertTrue(execution.is_succeeded())
+        output = execution.get_output()
+        print(f"output: {output}")
+
+        print(execution.get_start_time())
+        print(execution.get_completion_time())
+
+        print(f"complete {execution.is_complete()}")
+        print(f"succeeded {execution.is_succeeded()}")
+
+        self.assertFalse(execution.is_succeeded())
