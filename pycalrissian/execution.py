@@ -14,6 +14,7 @@ class JobStatus(Enum):
     ACTIVE = "active"
     FAILED = "failed"
     SUCCEEDED = "succeeded"
+    KILLED = "killed"
 
 
 class CalrissianExecution:
@@ -21,6 +22,7 @@ class CalrissianExecution:
         self.job = job
         self.runtime_context = runtime_context
         self.namespaced_job = None
+        self.killed = False
 
     def submit(self):
         """Submits the job to the cluster"""
@@ -34,6 +36,8 @@ class CalrissianExecution:
 
     def get_status(self):
         """Returns the job status"""
+        if self.killed:
+            return JobStatus.KILLED
         try:
             response = self.runtime_context.batch_v1_api.read_namespaced_job_status(
                 name=self.namespaced_job_name,
@@ -55,7 +59,11 @@ class CalrissianExecution:
 
     def is_complete(self) -> bool:
         """Returns True if the job execution is completed (success or failed)"""
-        return self.get_status() in [JobStatus.SUCCEEDED, JobStatus.FAILED]
+        return self.get_status() in [
+            JobStatus.SUCCEEDED,
+            JobStatus.FAILED,
+            JobStatus.KILLED,
+        ]
 
     def is_succeeded(self) -> bool:
         """Returns True if the job execution is completed and succeeded"""
@@ -145,10 +153,25 @@ class CalrissianExecution:
     def monitor(self, interval: int = 5) -> None:
 
         if self.is_active():
+            iterations = 0
 
             while self.is_active():
                 logger.info(f"job {self.job.job_name} is active")
                 time.sleep(interval)
+                iterations = iterations + 1
+
+                if iterations > (60 / interval):
+                    waiting_pods = self.get_waiting_pods()
+                    if len([waiting_pods]) > 0:
+                        logger.warning(
+                            "found pods in waiting status with reason ImagePullBackOff, killing job"  # noqa: E501
+                        )
+                        self.killed = True
+                        self.runtime_context.batch_v1_api.delete_namespaced_job(
+                            namespace=self.runtime_context.namespace,
+                            name=self.namespaced_job_name,
+                        )
+                        return
 
             if self.is_complete():
                 logger.info("execution is complete")
@@ -157,3 +180,21 @@ class CalrissianExecution:
 
         else:
             logger.warning("job is not submitted")
+
+    def get_waiting_pods(self):
+
+        pods_waiting = []
+
+        response = self.runtime_context.core_v1_api.list_namespaced_pod(
+            self.runtime_context.namespace
+        )
+
+        for pod in response.items:
+            for con_status in pod.status.container_statuses:
+
+                if con_status.state.waiting and con_status.state.waiting.reason in [
+                    "ImagePullBackOff"
+                ]:
+                    pods_waiting.append(pod)
+
+        return pods_waiting
