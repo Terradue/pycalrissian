@@ -85,7 +85,7 @@ class TestCalrissianExecution(unittest.TestCase):
         self.assertTrue(execution.is_succeeded())
 
     def test_wrong_docker_pull_job(self):
-
+        """tests the imagepullbackoff state of a pod, the job is killed"""
         with open("tests/wrong_docker_pull.cwl", "r") as stream:
 
             cwl = yaml.safe_load(stream)
@@ -110,7 +110,38 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5)
+        execution.monitor(interval=5, grace_period=60)
+
+        print(f"killed {execution.killed}")
+        self.assertFalse(execution.is_succeeded())
+
+    def test_high_reqs_job(self):
+        """tests the high reqs for RAM and cores, the job is killed"""
+        with open("tests/high_reqs.cwl", "r") as stream:
+
+            cwl = yaml.safe_load(stream)
+
+        params = {"message": "hello world!"}
+
+        pod_env_vars = {"A": "1", "B": "2"}
+
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=self.session,
+            pod_env_vars=pod_env_vars,
+            debug=True,
+            max_cores=2,
+            max_ram="4G",
+            keep_pods=True,
+            backoff_limit=1,
+        )
+
+        execution = CalrissianExecution(job=job, runtime_context=self.session)
+
+        execution.submit()
+
+        execution.monitor(interval=5, grace_period=60)
 
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())

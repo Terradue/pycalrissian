@@ -150,7 +150,7 @@ class CalrissianExecution:
             logger.error(f"Exception when calling get status: {e}\n")
             raise e
 
-    def monitor(self, interval: int = 5) -> None:
+    def monitor(self, interval: int = 5, grace_period=120) -> None:
 
         if self.is_active():
             iterations = 0
@@ -160,7 +160,7 @@ class CalrissianExecution:
                 time.sleep(interval)
                 iterations = iterations + 1
 
-                if iterations > (60 / interval):
+                if iterations > int(grace_period / interval):
                     waiting_pods = self.get_waiting_pods()
                     if len([waiting_pods]) > 0:
                         logger.warning(

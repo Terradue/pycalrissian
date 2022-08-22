@@ -223,7 +223,7 @@ class CalrissianJob:
                     items=[
                         client.V1KeyToPath(
                             key="pod-node-selector",
-                            path="pod_node_selector.yml",
+                            path="pod_nodeselectors.yml",
                             mode=0o644,
                         )
                     ],
