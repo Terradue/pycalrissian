@@ -16,7 +16,7 @@ $graph:
         type: string
       aoi:
         doc: area of interest as a bounding box
-        type: string
+        type: string?
       bands:
         type: string[]
         default: ["B8A", "B12", "SCL"]

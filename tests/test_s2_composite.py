@@ -86,8 +86,8 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.monitor(interval=5)
 
-        log = execution.get_log()
-        print(log)
+        execution.get_log()
+
         execution.get_usage_report()
 
         execution.get_output()
