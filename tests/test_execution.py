@@ -197,6 +197,6 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=15, grace_period=30, wall_time=150)
+        execution.monitor(interval=15, grace_period=30, wall_time=180)
 
         self.assertTrue(execution.is_succeeded())
