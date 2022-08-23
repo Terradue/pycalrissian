@@ -1,8 +1,9 @@
 import json
 import time
 from enum import Enum
-from typing import Dict
+from typing import Dict, List, Optional
 
+from kubernetes.client.models.v1_pod import V1Pod
 from kubernetes.client.rest import ApiException
 from loguru import logger
 
@@ -91,8 +92,10 @@ class CalrissianExecution:
     def get_usage_report(self) -> Dict:
         """Returns the job usage report"""
         if self.is_complete:
-            return json.loads(self._get_container_log(ContainerNames.SIDECAR_USAGE))
-        return {}
+            try:
+                return json.loads(self._get_container_log(ContainerNames.SIDECAR_USAGE))
+            except json.decoder.JSONDecodeError:
+                return {}
 
     def _get_container_log(self, container):
 
@@ -150,19 +153,33 @@ class CalrissianExecution:
             logger.error(f"Exception when calling get status: {e}\n")
             raise e
 
-    def monitor(self, interval: int = 5, grace_period=120) -> None:
+    def monitor(
+        self, interval: int = 5, grace_period=120, wall_time: Optional[int] = None
+    ) -> None:
 
         if self.is_active():
             iterations = 0
 
             while self.is_active():
+
                 logger.info(f"job {self.job.job_name} is active")
                 time.sleep(interval)
                 iterations = iterations + 1
 
+                if wall_time is not None and iterations > int(wall_time / interval):
+                    logger.warning(
+                        "reached wall time for execution, killing job"  # noqa: E501
+                    )
+                    self.killed = True
+                    self.runtime_context.batch_v1_api.delete_namespaced_job(
+                        namespace=self.runtime_context.namespace,
+                        name=self.namespaced_job_name,
+                    )
+                    return
+
                 if iterations > int(grace_period / interval):
                     waiting_pods = self.get_waiting_pods()
-                    if len([waiting_pods]) > 0:
+                    if waiting_pods:
                         logger.warning(
                             "found pods in waiting status with reason ImagePullBackOff, killing job"  # noqa: E501
                         )
@@ -181,7 +198,7 @@ class CalrissianExecution:
         else:
             logger.warning("job is not submitted")
 
-    def get_waiting_pods(self):
+    def get_waiting_pods(self) -> List[V1Pod]:
 
         pods_waiting = []
 

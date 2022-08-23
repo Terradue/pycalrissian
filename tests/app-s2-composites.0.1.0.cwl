@@ -203,8 +203,8 @@ $graph:
       DockerRequirement:
         dockerPull: osgeo/gdal
       ResourceRequirement:
-        coresMax: 4
-        ramMax: 32000
+        coresMax: 2
+        ramMax: 2000
     baseCommand: gdal_translate
     arguments:
       - -co

@@ -145,3 +145,58 @@ class TestCalrissianExecution(unittest.TestCase):
 
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
+
+    def test_wall_time_reached_job(self):
+        """tests wall time reached, the job is killed"""
+        with open("tests/sleep.cwl", "r") as stream:
+
+            cwl = yaml.safe_load(stream)
+
+        params = {"message": "hello world!"}
+
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=self.session,
+            debug=True,
+            max_cores=2,
+            max_ram="4G",
+            keep_pods=True,
+            backoff_limit=1,
+        )
+
+        execution = CalrissianExecution(job=job, runtime_context=self.session)
+
+        execution.submit()
+
+        execution.monitor(interval=15, grace_period=30, wall_time=45)
+
+        print(f"killed {execution.killed}")
+        self.assertFalse(execution.is_succeeded())
+
+    def test_wall_time_not_reached_job(self):
+        """tests wall time reached, the job is killed"""
+        with open("tests/sleep.cwl", "r") as stream:
+
+            cwl = yaml.safe_load(stream)
+
+        params = {"message": "hello world!"}
+
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=self.session,
+            debug=True,
+            max_cores=2,
+            max_ram="4G",
+            keep_pods=True,
+            backoff_limit=1,
+        )
+
+        execution = CalrissianExecution(job=job, runtime_context=self.session)
+
+        execution.submit()
+
+        execution.monitor(interval=15, grace_period=30, wall_time=150)
+
+        self.assertTrue(execution.is_succeeded())
