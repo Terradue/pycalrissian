@@ -63,6 +63,7 @@ class TestCalrissianJob(unittest.TestCase):
             params=params,
             runtime_context=session,
             pod_env_vars=pod_env_vars,
+            pod_node_selector={"key": "value"},
             debug=True,
             max_cores=2,
             max_ram="4G",

@@ -74,8 +74,8 @@ class TestCalrissianExecution(unittest.TestCase):
             cwl_entry_point="dnbr",
             pod_env_vars=pod_env_vars,
             debug=False,
-            max_cores=2,
-            max_ram="4G",
+            max_cores=6,
+            max_ram="16G",
             keep_pods=False,
             backoff_limit=1,
         )
@@ -84,7 +84,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5)
+        execution.monitor(interval=5, grace_period=600)
 
         execution.get_log()
 
