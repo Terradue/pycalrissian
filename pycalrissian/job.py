@@ -398,7 +398,9 @@ class CalrissianJob:
 
         container = self.create_container(
             name=ContainerNames.CALRISSIAN.value,
-            image="terradue/calrissian:0.11.0-sprint1",  # overide as env var?
+            image=os.getenv(
+                "CALRISSIAN_IMAGE", default="terradue/calrissian:0.11.0-sprint1"
+            ),
             command=["calrissian"],
             args=self._get_calrissian_args(),
             env=env_vars,
