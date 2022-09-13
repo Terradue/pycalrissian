@@ -16,8 +16,6 @@ class TestCalrissianJob(unittest.TestCase):
     def setUpClass(cls):
         cls.namespace = "job-namespace"
 
-    def test_job(self):
-
         username = "pippo"
         password = "pippo"
         email = "john.doe@me.com"
@@ -39,7 +37,7 @@ class TestCalrissianJob(unittest.TestCase):
         }
 
         session = CalrissianContext(
-            namespace=self.namespace,
+            namespace=cls.namespace,
             storage_class="longhorn",  # "microk8s-hostpath",
             volume_size="10G",
             image_pull_secrets=secret_config,
@@ -47,9 +45,14 @@ class TestCalrissianJob(unittest.TestCase):
 
         session.initialise()
 
-        # with open("tests/simple.cwl", "r") as stream:
+        cls.session = session
 
-        #     cwl = yaml.safe_load(stream)
+    @classmethod
+    def tearDown(cls):
+        cls.session.dispose()
+
+    def test_job(self):
+        # TODO check why this fails with namespace is being terminated
         document = "tests/simple.cwl"
         with open(document) as doc_handle:
             cwl = yaml.main.round_trip_load(doc_handle, preserve_quotes=True)
@@ -61,7 +64,7 @@ class TestCalrissianJob(unittest.TestCase):
         job = CalrissianJob(
             cwl=cwl,
             params=params,
-            runtime_context=session,
+            runtime_context=self.session,
             pod_env_vars=pod_env_vars,
             pod_node_selector={"key": "value"},
             debug=True,
@@ -72,3 +75,31 @@ class TestCalrissianJob(unittest.TestCase):
 
         job.to_yaml("job.yml")
         self.assertIsInstance(job.to_k8s_job(), V1Job)
+
+    def test_calrissian_image(self):
+
+        os.environ["CALRISSIAN_IMAGE"] = "someimage:latest"
+
+        document = "tests/simple.cwl"
+
+        with open(document) as doc_handle:
+            cwl = yaml.main.round_trip_load(doc_handle, preserve_quotes=True)
+
+        params = {"message": "hello world!"}
+
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=self.session,
+            pod_env_vars={},
+            pod_node_selector={},
+            debug=True,
+            max_cores=2,
+            max_ram="4G",
+            keep_pods=True,
+        )
+
+        self.assertEqual(
+            job.to_k8s_job().spec.template.spec.containers[0].image,
+            os.environ["CALRISSIAN_IMAGE"],
+        )
