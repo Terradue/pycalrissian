@@ -56,6 +56,8 @@ class TestCalrissianExecution(unittest.TestCase):
 
     def test_job(self):
 
+        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-se"
+
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
 
@@ -86,10 +88,10 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.monitor(interval=5, grace_period=600)
 
-        execution.get_log()
+        print(execution.get_log())
 
-        execution.get_usage_report()
+        print(execution.get_usage_report())
 
-        execution.get_output()
+        print(execution.get_output())
 
         self.assertTrue(execution.is_succeeded())

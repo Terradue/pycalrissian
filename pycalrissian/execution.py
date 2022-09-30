@@ -206,12 +206,15 @@ class CalrissianExecution:
             self.runtime_context.namespace
         )
 
-        for pod in response.items:
-            for con_status in pod.status.container_statuses:
+        if response is not None:
+            for pod in response.items:
+                if pod.status.container_statuses:
+                    for con_status in pod.status.container_statuses:
 
-                if con_status.state.waiting and con_status.state.waiting.reason in [
-                    "ImagePullBackOff"
-                ]:
-                    pods_waiting.append(pod)
+                        if (
+                            con_status.state.waiting
+                            and con_status.state.waiting.reason in ["ImagePullBackOff"]
+                        ):
+                            pods_waiting.append(pod)
 
         return pods_waiting
