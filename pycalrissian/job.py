@@ -8,6 +8,9 @@ from typing import Dict, List
 import yaml
 from kubernetes import client
 from kubernetes.client.models.v1_container import V1Container
+from kubernetes.client.models.v1_exec_action import V1ExecAction
+from kubernetes.client.models.v1_lifecycle import V1Lifecycle
+from kubernetes.client.models.v1_lifecycle_handler import V1LifecycleHandler
 from loguru import logger
 
 from pycalrissian.context import CalrissianContext
@@ -276,6 +279,11 @@ class CalrissianJob:
             command=command,
             volume_mounts=volume_mounts,
             env=env,
+            lifecycle=V1Lifecycle(
+                pre_stop=V1LifecycleHandler(
+                    _exec=V1ExecAction(command=["/bin/sh", "-c", "sleep 30"])
+                )
+            ),
         )
 
         return container
@@ -297,6 +305,7 @@ class CalrissianJob:
                     run_as_user=security_context["runAsUser"],
                     fs_group=security_context["fsGroup"],
                 ),
+                termination_grace_period_seconds=120,
             ),
             metadata=client.V1ObjectMeta(name=name, labels={"pod_name": name}),
         )
@@ -396,11 +405,15 @@ class CalrissianJob:
             env_vars.append(calrissian_delete_pod_env_var)
             logger.info("pods created by calrissian will not be deleted")
 
+        calrissian_image = os.getenv(
+            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.11.0-sprint1"
+        )
+
+        logger.info(f"using Calrissian image: {calrissian_image}")
+
         container = self.create_container(
             name=ContainerNames.CALRISSIAN.value,
-            image=os.getenv(
-                "CALRISSIAN_IMAGE", default="terradue/calrissian:0.11.0-sprint1"
-            ),
+            image=calrissian_image,
             command=["calrissian"],
             args=self._get_calrissian_args(),
             env=env_vars,
