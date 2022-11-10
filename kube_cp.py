@@ -21,9 +21,9 @@ class KubeCopy:
         print(volume_mounts)
         self.volumes = volumes
         self.volume_mounts = volume_mounts
-        self.namespace = "calrissian-session-bis"
+        self.namespace = "calrissian-session"
         self.container_name = "container-kube-cp"
-        self.pod_name = "kube-cp-2"
+        self.pod_name = "kube-cp"
 
         metadata = client.V1ObjectMeta(name=self.pod_name, namespace=self.namespace)
 
@@ -46,8 +46,40 @@ class KubeCopy:
             api_version="v1", kind="Pod", metadata=metadata, spec=pod_spec
         )
 
+        print(pod.to_dict())  # volume_mounts are ok, volumes missing
+
+        # resp = api_instance.create_namespaced_pod(
+        #    body=pod.to_dict(), namespace=self.namespace
+        # )
+
+        pod_manifest = {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {"name": self.pod_name},
+            "spec": {
+                "volumes": [
+                    {
+                        "name": "calrissian-input-data",
+                        "persistentVolumeClaim": {"claimName": "calrissian-input-data"},
+                    }
+                ],
+                "containers": [
+                    {
+                        "image": "busybox",
+                        "name": "sleep",
+                        "args": ["/bin/sh", "-c", "while true;do date;sleep 5; done"],
+                        "volumeMounts": [
+                            {
+                                "name": "calrissian-input-data",
+                                "mountPath": "/calrissian-input",
+                            }
+                        ],
+                    }
+                ],
+            },
+        }
         resp = api_instance.create_namespaced_pod(
-            body=pod.to_dict(), namespace=self.namespace
+            body=pod_manifest, namespace=self.namespace
         )
         while True:
             resp = api_instance.read_namespaced_pod(
@@ -58,8 +90,7 @@ class KubeCopy:
             time.sleep(1)
         print("Done.")
 
-    @staticmethod
-    def copy_file_inside_pod(pod_name, src_path, dest_path, namespace="default"):
+    def copy_file_inside_pod(self, src_path, dest_path):
         """
         This function copies a file inside the pod
         :param api_instance: coreV1Api()
@@ -75,8 +106,8 @@ class KubeCopy:
             exec_command = ["tar", "xvf", "-", "-C", "/"]
             api_response = stream(
                 api_instance.connect_get_namespaced_pod_exec,
-                pod_name,
-                namespace,
+                self.pod_name,
+                self.namespace,
                 command=exec_command,
                 stderr=True,
                 stdin=True,
@@ -108,8 +139,7 @@ class KubeCopy:
         except ApiException as e:
             print("Exception when copying file to the pod%s \n" % e)
 
-    @staticmethod
-    def copy_file_from_pod(pod_name, src_path, dest_path, namespace="default"):
+    def copy_file_from_pod(self, src_path, dest_path):
         """
 
         :param pod_name:
@@ -126,8 +156,8 @@ class KubeCopy:
         with TemporaryFile() as tar_buffer:
             resp = stream(
                 api_instance.connect_get_namespaced_pod_exec,
-                pod_name,
-                namespace,
+                self.pod_name,
+                self.namespace,
                 command=exec_command,
                 stderr=True,
                 stdin=True,
@@ -181,4 +211,6 @@ volume_mounts = [
 
 volumes = [calrissian_wdir_volume]
 
-KubeCopy(volumes=volumes, volume_mounts=volume_mounts)
+cp = KubeCopy(volumes=volumes, volume_mounts=volume_mounts)
+
+cp.copy_file_from_pod(src_path="/calrissian-input/bcd.txt", dest_path="./")
