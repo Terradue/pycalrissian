@@ -49,6 +49,7 @@ class CalrissianContext:
 
         self.image_pull_secrets = image_pull_secrets
         self.secret_name = "container-rg"
+        self.calrissian_wdir = "calrissian-wdir"
 
     def initialise(self):
         """Create the kubernetes resources to run a Calrissian job
@@ -97,7 +98,7 @@ class CalrissianContext:
             f"with storage class {self.storage_class}"
         )
         response = self.create_pvc(
-            name="calrissian-wdir",
+            name=self.calrissian_wdir,
             size=self.volume_size,
             storage_class=self.storage_class,
             access_modes=["ReadWriteMany"],

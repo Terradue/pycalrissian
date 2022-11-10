@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from enum import Enum
 from typing import Dict, List, Optional
@@ -9,6 +10,7 @@ from loguru import logger
 
 from pycalrissian.context import CalrissianContext
 from pycalrissian.job import CalrissianJob, ContainerNames
+from pycalrissian.utils import copy_from_volume
 
 
 class JobStatus(Enum):
@@ -77,25 +79,44 @@ class CalrissianExecution:
     def get_output(self) -> Dict:
         """Returns the job output"""
         if self.is_succeeded:
-            output = self._get_container_log(ContainerNames.SIDECAR_OUTPUT)
-            print(output)
-            if isinstance(output, dict):
-                return json.loads(output)
-        return {}
+            return self.get_file_from_volume("output.json")
+
+    def get_usage_report(self) -> Dict:
+        """Returns the job usage report"""
+        if self.is_complete:
+            try:
+                return self.get_file_from_volume("report.json")
+            except json.decoder.JSONDecodeError:
+                return {}
+
+    def get_file_from_volume(self, filename):
+
+        volume = {
+            "name": self.job.volume_calrissian_wdir,
+            "persistentVolumeClaim": {
+                "claimName": self.runtime_context.calrissian_wdir
+            },
+        }
+        volume_mount = {
+            "name": self.job.volume_calrissian_wdir,
+            "mountPath": self.job.calrissian_base_path,
+        }
+        copy_from_volume(
+            context=self.runtime_context,
+            volume=volume,
+            volume_mount=volume_mount,
+            source_paths=[os.path.join(self.job.calrissian_base_path, filename)],
+            destination_path=".",
+        )
+
+        with open(filename, "r") as staged_file:
+            return json.load(staged_file)
 
     def get_log(self):
         """Returns the job execution log"""
         if self.is_complete:
             return self._get_container_log(ContainerNames.CALRISSIAN)
         return None
-
-    def get_usage_report(self) -> Dict:
-        """Returns the job usage report"""
-        if self.is_complete:
-            try:
-                return json.loads(self._get_container_log(ContainerNames.SIDECAR_USAGE))
-            except json.decoder.JSONDecodeError:
-                return {}
 
     def _get_container_log(self, container):
 
