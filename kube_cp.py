@@ -3,9 +3,12 @@ The functions currently only support the copying of file
 from pod and into the pod. Support for copying the entire directory is
 yet to be added
 """
+import os
 import tarfile
 import time
+import uuid
 from tempfile import TemporaryFile
+from typing import Dict
 
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
@@ -15,65 +18,35 @@ config.load_config()
 api_instance = client.CoreV1Api()
 
 
-class KubeCopy:
-    def __init__(self, volumes, volume_mounts):
+class HelperPod:
+    def __init__(self, namespace: str, volume: Dict, volume_mount: Dict):
 
-        print(volume_mounts)
-        self.volumes = volumes
-        self.volume_mounts = volume_mounts
-        self.namespace = "calrissian-session"
+        self.volume = volume
+        self.volume_mount = volume_mount
+        self.namespace = namespace
         self.container_name = "container-kube-cp"
-        self.pod_name = "kube-cp"
+        self.pod_name = f"kube-cp-{self._get_uid()}"
 
-        metadata = client.V1ObjectMeta(name=self.pod_name, namespace=self.namespace)
+        self._create_pod()
 
-        container = client.V1Container(
-            image="docker.io/busybox",
-            name="busybox",
-            volume_mounts=self.volume_mounts,
-            command=["sleep"],
-            args=["300"],
-        )
+    @staticmethod
+    def _get_uid():
+        return str(uuid.uuid4())[-6:]
 
-        pod_spec = client.V1PodSpec(
-            containers=[container],
-            volumes=self.volumes,
-            restart_policy="Never",
-            node_selector={"k8s.scaleway.com/pool-name": "default"},
-        )
-
-        pod = client.V1Pod(
-            api_version="v1", kind="Pod", metadata=metadata, spec=pod_spec
-        )
-
-        print(pod.to_dict())  # volume_mounts are ok, volumes missing
-
-        # resp = api_instance.create_namespaced_pod(
-        #    body=pod.to_dict(), namespace=self.namespace
-        # )
+    def _create_pod(self):
 
         pod_manifest = {
             "apiVersion": "v1",
             "kind": "Pod",
             "metadata": {"name": self.pod_name},
             "spec": {
-                "volumes": [
-                    {
-                        "name": "calrissian-input-data",
-                        "persistentVolumeClaim": {"claimName": "calrissian-input-data"},
-                    }
-                ],
+                "volumes": [self.volume],
                 "containers": [
                     {
                         "image": "busybox",
-                        "name": "sleep",
+                        "name": self.container_name,
                         "args": ["/bin/sh", "-c", "while true;do date;sleep 5; done"],
-                        "volumeMounts": [
-                            {
-                                "name": "calrissian-input-data",
-                                "mountPath": "/calrissian-input",
-                            }
-                        ],
+                        "volumeMounts": [self.volume_mount],
                     }
                 ],
             },
@@ -88,9 +61,14 @@ class KubeCopy:
             if resp.status.phase != "Pending":
                 break
             time.sleep(1)
-        print("Done.")
 
-    def copy_file_inside_pod(self, src_path, dest_path):
+    def dismiss(self):
+        try:
+            api_instance.delete_namespaced_pod(self.pod_name, self.namespace)
+        except ApiException as e:
+            print(f"Exception when calling CoreV1Api->delete_namespaced_pod: {e}\n")
+
+    def copy_to_volume(self, src_path, dest_path):
         """
         This function copies a file inside the pod
         :param api_instance: coreV1Api()
@@ -139,7 +117,7 @@ class KubeCopy:
         except ApiException as e:
             print("Exception when copying file to the pod%s \n" % e)
 
-    def copy_file_from_pod(self, src_path, dest_path):
+    def copy_from_volume(self, src_path, dest_path):
         """
 
         :param pod_name:
@@ -187,30 +165,73 @@ class KubeCopy:
                     tar.makefile(member, dest_path + "/" + fname)
 
 
-# copy_file_from_pod(pod_name="my-calrissian-session-59fbfbf465-2dd66",
-# namespace='calrissian-session', src_path="/tmp/abc.txt", dest_path="./")
+def copy_to_volume(
+    namespace: str,
+    volume: Dict,
+    volume_mount: Dict,
+    source_paths: list,
+    destination_path: str,
+):
 
-# the RWX volume for Calrissian from volume claim
+    helper_pod = HelperPod(
+        namespace=namespace, volume=volume, volume_mount=volume_mount
+    )
 
-calrissian_base_path = "/calrissian-input"
-calrissian_wdir_volume_mount = client.V1VolumeMount(
-    mount_path=calrissian_base_path,
-    name="calrissian-input-data",
-    read_only=False,
+    try:
+        for source_path in source_paths:
+            print(f"copy {source_path} to {destination_path}")
+            helper_pod.copy_to_volume(
+                src_path=source_path,
+                dest_path=os.path.join(destination_path, os.path.basename(source_path)),
+            )
+    finally:
+        helper_pod.dismiss()
+
+
+def copy_from_volume(
+    namespace: str,
+    volume: Dict,
+    volume_mount: Dict,
+    source_paths: list,
+    destination_path: str,
+):
+
+    helper_pod = HelperPod(
+        namespace=namespace, volume=volume, volume_mount=volume_mount
+    )
+
+    try:
+        for source_path in source_paths:
+            print(f"copy {source_path} to {destination_path}")
+            helper_pod.copy_from_volume(
+                src_path=source_path,
+                dest_path=destination_path,
+            )
+    finally:
+        helper_pod.dismiss()
+
+
+volume = {
+    "name": "calrissian-input-data",
+    "persistentVolumeClaim": {"claimName": "calrissian-input-data"},
+}
+volume_mount = {
+    "name": "calrissian-input-data",
+    "mountPath": "/calrissian-input",
+}
+
+copy_to_volume(
+    namespace="calrissian-session",
+    volume=volume,
+    volume_mount=volume_mount,
+    source_paths=["setup.py"],
+    destination_path="/calrissian-input/",
 )
-calrissian_wdir_volume = client.V1Volume(
-    name="calrissian-input-data",
-    persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-        claim_name="calrissian-input-data",
-        read_only=False,
-    ),
+
+copy_from_volume(
+    namespace="calrissian-session",
+    volume=volume,
+    volume_mount=volume_mount,
+    source_paths=["/calrissian-input/abc.txt"],
+    destination_path=".",
 )
-volume_mounts = [
-    calrissian_wdir_volume_mount,
-]
-
-volumes = [calrissian_wdir_volume]
-
-cp = KubeCopy(volumes=volumes, volume_mounts=volume_mounts)
-
-cp.copy_file_from_pod(src_path="/calrissian-input/bcd.txt", dest_path="./")
