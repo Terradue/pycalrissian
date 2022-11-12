@@ -407,7 +407,7 @@ class CalrissianJob:
             logger.info("pods created by calrissian will not be deleted")
 
         calrissian_image = os.getenv(
-            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.11.0-sprint1"
+            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.11.0-logs"
         )
 
         logger.info(f"using Calrissian image: {calrissian_image}")
