@@ -43,6 +43,7 @@ class CalrissianJob:
         no_read_only: bool = False,
         keep_pods: bool = False,
         backoff_limit: int = 2,
+        tool_logs: bool = False,
     ):
 
         self.cwl = cwl
@@ -61,6 +62,7 @@ class CalrissianJob:
         self.keep_pods = keep_pods
         self.backoff_limit = backoff_limit
         self.volume_calrissian_wdir = "volume-calrissian-wdir"
+        self.tool_logs = tool_logs
 
         if self.security_context is None:
             logger.info(
@@ -366,6 +368,9 @@ class CalrissianJob:
 
         if self.no_read_only:
             args.append("--no-read-only")
+
+        if self.tool_logs:
+            args.extend(["--tool-logs-basepath", self.calrissian_base_path])
 
         if self.cwl_entry_point is not None:
             args.extend(
