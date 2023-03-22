@@ -17,7 +17,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         cls.namespace = "job-namespace-unit-test"
 
         username = "fabricebrito"
-        password = "1f54397c-f15c-4be4-b9ea-4220fb2d80ce"
+        password = ""
         email = "fabrice.brito@terradue.com"
         registry = "https://index.docker.io/v1/"
 

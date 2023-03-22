@@ -38,7 +38,7 @@ class TestCalrissianJob(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="longhorn",  # "microk8s-hostpath",
+            storage_class="openebs-kernel-nfs-scw",  # "microk8s-hostpath",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -66,7 +66,9 @@ class TestCalrissianJob(unittest.TestCase):
             params=params,
             runtime_context=self.session,
             pod_env_vars=pod_env_vars,
-            pod_node_selector={"key": "value"},
+            pod_node_selector={
+                "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
+            },
             debug=True,
             max_cores=2,
             max_ram="4G",

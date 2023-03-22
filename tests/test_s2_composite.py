@@ -14,11 +14,11 @@ os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
 class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.namespace = "job-namespace"
+        cls.namespace = "job-namespace-unit-test"
 
-        username = "fabricebrito"
-        password = "1f54397c-f15c-4be4-b9ea-4220fb2d80ce"
-        email = "fabrice.brito@terradue.com"
+        username = ""
+        password = ""
+        email = ""
         registry = "https://index.docker.io/v1/"
 
         auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
@@ -33,15 +33,13 @@ class TestCalrissianExecution(unittest.TestCase):
                     "email": email,
                     "auth": auth,
                 },
-                "registry.gitlab.com": {
-                    "auth": "Z2l0bGFiK2RlcGxveS10b2tlbi04NzY3OTQ6Vnc3Z1NpSHllaVlwLS0zUnEtc3o="  # noqa: E501
-                },
+                "registry.gitlab.com": {"auth": "="},  # noqa: E501
             }
         }
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="longhorn",
+            storage_class="openebs-kernel-nfs-scw",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -54,9 +52,9 @@ class TestCalrissianExecution(unittest.TestCase):
     def tearDown(cls):
         cls.session.dispose()
 
-    def test_job(self):
+    def test_s2_composite_job(self):
 
-        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-se"
+        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
@@ -75,11 +73,15 @@ class TestCalrissianExecution(unittest.TestCase):
             runtime_context=self.session,
             cwl_entry_point="dnbr",
             pod_env_vars=pod_env_vars,
+            pod_node_selector={
+                "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
+            },
             debug=False,
             max_cores=6,
             max_ram="16G",
             keep_pods=False,
             backoff_limit=1,
+            tool_logs=True,
         )
 
         execution = CalrissianExecution(job=job, runtime_context=self.session)

@@ -372,6 +372,8 @@ class CalrissianJob:
         if self.tool_logs:
             args.extend(["--tool-logs-basepath", self.calrissian_base_path])
 
+        args.extend(["--enable-ext"])
+
         if self.cwl_entry_point is not None:
             args.extend(
                 [
@@ -407,7 +409,7 @@ class CalrissianJob:
             logger.info("pods created by calrissian will not be deleted")
 
         calrissian_image = os.getenv(
-            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.11.0-logs"
+            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.12.0"
         )
 
         logger.info(f"using Calrissian image: {calrissian_image}")

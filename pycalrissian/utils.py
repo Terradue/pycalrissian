@@ -78,7 +78,7 @@ class HelperPod:
         :return: nothing
         """
         try:
-            exec_command = ["tar", "xvf", "-", "-C", "/"]
+            exec_command = ["tar", "xvf", "-", "-C", "/", "--absolute-names"]
             api_response = stream(
                 self.context.core_v1_api.connect_get_namespaced_pod_exec,
                 self.pod_name,
