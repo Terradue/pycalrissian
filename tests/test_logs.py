@@ -11,14 +11,14 @@ from pycalrissian.job import CalrissianJob
 os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
 
 
-class TestCalrissianExecution(unittest.TestCase):
+class TestCalrissianExecutionLogs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.namespace = "job-namespace-unit-test"
 
-        username = ""
+        username = "fabricebrito"
         password = ""
-        email = ""
+        email = "fabrice.brito@terradue.com"
         registry = "https://index.docker.io/v1/"
 
         auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
@@ -33,7 +33,7 @@ class TestCalrissianExecution(unittest.TestCase):
                     "email": email,
                     "auth": auth,
                 },
-                "registry.gitlab.com": {"auth": "="},  # noqa: E501
+                "registry.gitlab.com": {"auth": ""},  # noqa: E501
             }
         }
 
@@ -52,18 +52,14 @@ class TestCalrissianExecution(unittest.TestCase):
     def tearDown(cls):
         cls.session.dispose()
 
-    def test_s2_composite_job(self):
+    def test_job_tool_logs(self):
 
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
-        with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
+        with open("tests/logs.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
 
-        params = {
-            "post_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A",  # noqa: E501
-            "pre_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210703_0_L2A",  # noqa: E501
-            "aoi": "136.659,-35.96,136.923,-35.791",
-        }
+        params = {"message": ["one", "two", "three"]}
 
         pod_env_vars = {"A": "1", "B": "2"}
 
@@ -71,14 +67,14 @@ class TestCalrissianExecution(unittest.TestCase):
             cwl=cwl,
             params=params,
             runtime_context=self.session,
-            cwl_entry_point="dnbr",
+            cwl_entry_point="main",
             pod_env_vars=pod_env_vars,
             pod_node_selector={
                 "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
             },
             debug=False,
-            max_cores=6,
-            max_ram="16G",
+            max_cores=4,
+            max_ram="4G",
             keep_pods=False,
             backoff_limit=1,
             tool_logs=True,
@@ -95,5 +91,7 @@ class TestCalrissianExecution(unittest.TestCase):
         print(execution.get_usage_report())
 
         print(execution.get_output())
+
+        execution.get_tool_logs()
 
         self.assertTrue(execution.is_succeeded())

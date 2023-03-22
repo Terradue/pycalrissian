@@ -18,8 +18,11 @@ from pycalrissian.context import CalrissianContext
 
 class ContainerNames(Enum):
     CALRISSIAN = "calrissian"
-    SIDECAR_USAGE = "sidecar-container-usage"
-    SIDECAR_OUTPUT = "sidecar-container-output"
+
+
+# SIDECAR_USAGE = "sidecar-container-usage"
+# SIDECAR_OUTPUT = "sidecar-container-output"
+# SIDECAR_COPY = "sidecar-container-copy"
 
 
 class CalrissianJob:
@@ -40,6 +43,7 @@ class CalrissianJob:
         no_read_only: bool = False,
         keep_pods: bool = False,
         backoff_limit: int = 2,
+        tool_logs: bool = False,
     ):
 
         self.cwl = cwl
@@ -57,6 +61,8 @@ class CalrissianJob:
         self.no_read_only = no_read_only
         self.keep_pods = keep_pods
         self.backoff_limit = backoff_limit
+        self.volume_calrissian_wdir = "volume-calrissian-wdir"
+        self.tool_logs = tool_logs
 
         if self.security_context is None:
             logger.info(
@@ -175,15 +181,15 @@ class CalrissianJob:
 
         # the RWX volume for Calrissian from volume claim
         calrissian_wdir_volume = client.V1Volume(
-            name="volume-calrissian-wdir",
+            name=self.volume_calrissian_wdir,
             persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                claim_name="calrissian-wdir",
+                claim_name=self.runtime_context.calrissian_wdir,
                 read_only=False,
             ),
         )
         calrissian_wdir_volume_mount = client.V1VolumeMount(
             mount_path=self.calrissian_base_path,
-            name="volume-calrissian-wdir",
+            name=self.volume_calrissian_wdir,
             read_only=False,
         )
 
@@ -246,14 +252,6 @@ class CalrissianJob:
             name="calrissian_pod",
             containers=[
                 self._get_calrissian_container(volume_mounts=volume_mounts),
-                self._get_side_car_container(
-                    ContainerNames.SIDECAR_OUTPUT,
-                    volume_mounts=[calrissian_wdir_volume_mount],
-                ),
-                self._get_side_car_container(
-                    ContainerNames.SIDECAR_USAGE,
-                    volume_mounts=[calrissian_wdir_volume_mount],
-                ),
             ],
             volumes=volumes,
             security_context=self.security_context,
@@ -341,7 +339,7 @@ class CalrissianJob:
         args.extend(["--stderr", os.path.join(self.calrissian_base_path, "stderr.log")])
 
         args.extend(
-            ["--usage-report", os.path.join(self.calrissian_base_path, "usage.json")]
+            ["--usage-report", os.path.join(self.calrissian_base_path, "report.json")]
         )
 
         args.extend(
@@ -370,6 +368,11 @@ class CalrissianJob:
 
         if self.no_read_only:
             args.append("--no-read-only")
+
+        if self.tool_logs:
+            args.extend(["--tool-logs-basepath", self.calrissian_base_path])
+
+        args.extend(["--enable-ext"])
 
         if self.cwl_entry_point is not None:
             args.extend(
@@ -406,7 +409,7 @@ class CalrissianJob:
             logger.info("pods created by calrissian will not be deleted")
 
         calrissian_image = os.getenv(
-            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.11.0-sprint1"
+            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.12.0"
         )
 
         logger.info(f"using Calrissian image: {calrissian_image}")
@@ -417,35 +420,6 @@ class CalrissianJob:
             command=["calrissian"],
             args=self._get_calrissian_args(),
             env=env_vars,
-            volume_mounts=volume_mounts,
-        )
-
-        return container
-
-    def _get_side_car_container(self, name, volume_mounts):
-        """Creates the sidecar containers definition"""
-        if name not in [ContainerNames.SIDECAR_USAGE, ContainerNames.SIDECAR_OUTPUT]:
-            raise ValueError
-
-        args = {}
-
-        args[ContainerNames.SIDECAR_USAGE] = [
-            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{{.status.containerStatuses[0].state.terminated}}') ]; do sleep 5; done; [ -f {0} ] && cat {0}".format(  # noqa: E501
-                os.path.join(self.calrissian_base_path, "usage.json")
-            )
-        ]
-        args[ContainerNames.SIDECAR_OUTPUT] = [
-            "while [ -z $(kubectl get pods $HOSTNAME -o jsonpath='{{.status.containerStatuses[0].state.terminated}}') ]; do sleep 5; done; [ -f {0} ] && cat {0}".format(  # noqa: E501
-                os.path.join(self.calrissian_base_path, "output.json")
-            )
-        ]
-
-        container = self.create_container(
-            name=name.value,
-            image="bitnami/kubectl",  # overide as env var?
-            command=["sh", "-c"],
-            args=args[name],
-            env=[],
             volume_mounts=volume_mounts,
         )
 
