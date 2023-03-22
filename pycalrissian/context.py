@@ -411,22 +411,22 @@ class CalrissianContext:
                 name=name, namespace=self.namespace
             )
 
-        hard = {
-            "requests.cpu": "1",
-            "requests.memory": "512M",
-            "limits.cpu": "2",
-            "limits.memory": "512M",
-            "requests.storage": "1Gi",
-            "services.nodeports": "0",
-        }
+        # hard = {
+        #     "requests.cpu": "1",
+        #     "requests.memory": "512M",
+        #     "limits.cpu": "2",
+        #     "limits.memory": "512M",
+        #     "requests.storage": "1Gi",
+        #     "services.nodeports": "0",
+        # }
 
-        hard.update(self.resource_quota)
+        # hard.update(self.resource_quota)
 
-        logger.info(f"resource quota hard: {hard}")
+        # logger.info(f"resource quota hard: {hard}")
 
         metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
 
-        spec = client.V1ResourceQuotaSpec(hard=hard)
+        spec = client.V1ResourceQuotaSpec(hard=self.resource_quota)
 
         body = client.V1ResourceQuota(metadata=metadata, spec=spec)
 
