@@ -6,3 +6,4 @@ dist
 *.egg-info
 *.tif
 catalog.json
+job.yml

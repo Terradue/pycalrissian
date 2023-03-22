@@ -20,8 +20,11 @@ class CalrissianContext:
         namespace: str,
         storage_class: str,
         volume_size: str,
+        resource_quota: Dict = None,
         image_pull_secrets: Dict = None,
         kubeconfig_file: TextIO = None,
+        labels: Dict = None,
+        annotations: Dict = None,
     ):
         """Creates a CalrissianContext object
 
@@ -47,9 +50,14 @@ class CalrissianContext:
         self.storage_class = storage_class
         self.volume_size = volume_size
 
+        self.resource_quota = resource_quota
+
         self.image_pull_secrets = image_pull_secrets
         self.secret_name = "container-rg"
         self.calrissian_wdir = "calrissian-wdir"
+
+        self.labels = labels
+        self.annotations = annotations
 
     def initialise(self):
         """Create the kubernetes resources to run a Calrissian job
@@ -63,7 +71,7 @@ class CalrissianContext:
         # create namespace
         if not self.is_namespace_created():
             logger.info(f"create namespace {self.namespace}")
-            self.create_namespace()
+            self.create_namespace(labels=self.labels, annotations=self.annotations)
 
         # create roles and role binding
         roles = {}
@@ -112,6 +120,10 @@ class CalrissianContext:
 
             logger.info("patch service account")
             self.patch_service_account()
+
+        if self.resource_quota:
+            logger.info("create resource quota")
+            self.create_resource_quota(name="calrissian-resource-quota")
 
     def dispose(self):
 
@@ -209,6 +221,11 @@ class CalrissianContext:
         read_methods[
             "read_namespaced_secret"
         ] = self.core_v1_api.read_namespaced_secret  # noqa: E501
+
+        read_methods[
+            "read_namespaced_resource_quota"
+        ] = self.core_v1_api.read_namespaced_resource_quota  # noqa: E501
+
         try:
             if read_method in [
                 "read_namespaced_config_map",
@@ -216,6 +233,7 @@ class CalrissianContext:
                 "read_namespaced_role_binding",
                 "read_namespaced_persistent_volume_claim",
                 "read_namespaced_secret",
+                "read_namespaced_resource_quota",
             ]:
                 read_methods[read_method](namespace=self.namespace, **kwargs)
             else:
@@ -253,6 +271,10 @@ class CalrissianContext:
             "read_namespaced_persistent_volume_claim", **kwargs
         )  # noqa: E501
 
+    def is_resource_quota_created(self, **kwargs):
+
+        return self.is_object_created("read_namespaced_resource_quota", **kwargs)
+
     def is_image_pull_secret_created(self, **kwargs):
 
         return self.is_object_created("read_namespaced_secret", **kwargs)
@@ -272,7 +294,9 @@ class CalrissianContext:
         if i == max_tries:
             raise ApiException()
 
-    def create_namespace(self, job_labels: dict = None) -> client.V1Namespace:
+    def create_namespace(
+        self, labels: dict = None, annotations: dict = None
+    ) -> client.V1Namespace:
 
         if self.is_namespace_created():
             logger.info(f"namespace {self.namespace} exists, skipping creation")
@@ -282,7 +306,7 @@ class CalrissianContext:
         try:
             body = client.V1Namespace(
                 metadata=client.V1ObjectMeta(
-                    name=self.namespace, labels=job_labels
+                    name=self.namespace, labels=labels, annotations=annotations
                 )  # noqa: E501
             )
             response = self.core_v1_api.create_namespace(
@@ -375,6 +399,49 @@ class CalrissianContext:
         except ApiException as e:
             logger.error(
                 f"role binding {name} not created in the time interval assigned:"
+                f" Exception when calling get status: {e}\n"
+            )
+            raise e
+
+    def create_resource_quota(self, name):
+
+        if self.is_resource_quota_created(name=name):
+
+            return self.core_v1_api.read_namespaced_resource_quota(
+                name=name, namespace=self.namespace
+            )
+
+        # hard = {
+        #     "requests.cpu": "1",
+        #     "requests.memory": "512M",
+        #     "limits.cpu": "2",
+        #     "limits.memory": "512M",
+        #     "requests.storage": "1Gi",
+        #     "services.nodeports": "0",
+        # }
+
+        # hard.update(self.resource_quota)
+
+        # logger.info(f"resource quota hard: {hard}")
+
+        metadata = client.V1ObjectMeta(name=name, namespace=self.namespace)
+
+        spec = client.V1ResourceQuotaSpec(hard=self.resource_quota)
+
+        body = client.V1ResourceQuota(metadata=metadata, spec=spec)
+
+        try:
+            response = self.core_v1_api.create_namespaced_resource_quota(  # noqa: E501
+                self.namespace, body, pretty=True
+            )
+
+            if not self.retry(self.is_resource_quota_created, name=name):
+                raise ApiException(http_resp=response)
+            logger.info(f"resource quota {name} created")
+            return response
+        except ApiException as e:
+            logger.error(
+                f"resource quota {name} not created in the time interval assigned:"
                 f" Exception when calling get status: {e}\n"
             )
             raise e

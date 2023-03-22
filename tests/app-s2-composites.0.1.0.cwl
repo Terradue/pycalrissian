@@ -120,6 +120,9 @@ $graph:
     requirements:
       DockerRequirement:
         dockerPull: docker.io/curlimages/curl:latest
+      ResourceRequirement:
+        coresMax: 2
+        ramMax: 2000
       ShellCommandRequirement: {}
       InlineJavascriptRequirement: {}
     baseCommand: [curl, -s]
@@ -144,6 +147,9 @@ $graph:
     id: translate_clt
     requirements:
       InlineJavascriptRequirement: {}
+      ResourceRequirement:
+        coresMax: 2
+        ramMax: 2000
       DockerRequirement:
         dockerPull: docker.io/osgeo/gdal
     baseCommand: gdal_translate
@@ -174,6 +180,9 @@ $graph:
     id: band_math_clt
     requirements:
       InlineJavascriptRequirement: {}
+      ResourceRequirement:
+        coresMax: 2
+        ramMax: 2000
       DockerRequirement:
         dockerPull: docker.io/terradue/otb-7.2.0
     baseCommand: otbcli_BandMathX

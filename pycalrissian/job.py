@@ -11,6 +11,7 @@ from kubernetes.client.models.v1_container import V1Container
 from kubernetes.client.models.v1_exec_action import V1ExecAction
 from kubernetes.client.models.v1_lifecycle import V1Lifecycle
 from kubernetes.client.models.v1_lifecycle_handler import V1LifecycleHandler
+from kubernetes.client.models.v1_resource_requirements import V1ResourceRequirements
 from loguru import logger
 
 from pycalrissian.context import CalrissianContext
@@ -281,6 +282,10 @@ class CalrissianJob:
                 pre_stop=V1LifecycleHandler(
                     _exec=V1ExecAction(command=["/bin/sh", "-c", "sleep 30"])
                 )
+            ),
+            resources=V1ResourceRequirements(
+                requests={"cpu": "1000m", "memory": "1G"},
+                limits={"cpu": "2000m", "memory": "2G"},
             ),
         )
 

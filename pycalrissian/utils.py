@@ -45,6 +45,7 @@ class HelperPod:
                         "name": self.container_name,
                         "args": ["/bin/sh", "-c", "while true;do date;sleep 5; done"],
                         "volumeMounts": [self.volume_mount],
+                        "resources": {"requests": {"cpu": "100m", "memory": "100Mi"}},
                     }
                 ],
             },
