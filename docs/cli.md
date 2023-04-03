@@ -57,6 +57,8 @@ YAML file of labels to add to pods submitted
 ## Examples
 
 ```
+export KUBECONFIG=~/.kube/kubeconfig.yaml
+
 calrissiantool \
     --max-ram 8G \
     --max-cores 2 \
@@ -70,4 +72,14 @@ calrissiantool \
     --debug \
     --keep-resources \
     "https://raw.githubusercontent.com/EOEPCA/app-snuggs/main/app-package.cwl#snuggs"
-    tests/params-snuggs.yml
+    params-snuggs.yml
+```
+
+Where `params-snuggs.yml` is a YAML file with:
+
+```
+input_reference:
+- "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A"
+s_expression:
+- "blue:(* B01 B01)"
+```
