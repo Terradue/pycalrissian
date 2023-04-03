@@ -59,6 +59,8 @@ class Helper:
         self.volume_size = kwargs.get("volume_size", "10Gi")
         self.cwl = kwargs.get("cwl")
 
+        self.keep_resources = kwargs.get("keep_resources", False)
+
         logger.info(kwargs["params"])
         if not kwargs["params"]:
             raise Exception("No parameters provided")
@@ -322,6 +324,13 @@ class Helper:
     required=False,
 )
 @click.option(
+    "--keep-resources",
+    "keep_resources",
+    help="Keep kubernetes resources. Defaults to False",
+    is_flag=True,
+    required=False,
+)
+@click.option(
     "--debug",
     "debug",
     help="Sets the debug mode",
@@ -399,8 +408,10 @@ def main(ctx, **kwargs):
 
     output = helper.handle_outputs(execution)
 
-    logger.info("clean-up kubernetes resources")
-    session.dispose()
+    # clean-up
+    if not helper.keep_resources:
+        logger.info("clean-up kubernetes resources")
+        session.dispose()
 
     print(output)
     return exit_value
