@@ -1,3 +1,4 @@
+import sys
 import click
 import cwl_utils
 import yaml
@@ -39,26 +40,39 @@ class Helper:
         # get the click context and the kwargs
         self.context = context
         self.kwargs = kwargs
-        logger.info(self.context.args)
 
         # set the values from the arguments or the defaults
         self.storage_class = kwargs.get("storage_class", "default")
-        self.debug = kwargs.get("debug", False)
-        self.read_only = kwargs.get("read_only", False)
-        self.monitor_interval = kwargs.get("monitor_interval", 15)
+
+        # job resources
         self.max_ram = kwargs.get("max_ram", None)
         self.max_cores = kwargs.get("max_cores", None)
-        self.pod_labels = kwargs.get("pod_labels", None)
-        self.pod_node_selector = kwargs.get("pod_node_selector", None)
+        self.volume_size = kwargs.get("volume_size", "10Gi")
+
+        self.debug = kwargs.get("debug", False)
+        self.no_read_only = kwargs.get("no_read_only", False)
+        self.monitor_interval = kwargs.get("monitor_interval", 15)
+
         self.pod_service_account = kwargs.get("pod_service_account", None)
         self.usage_report = kwargs.get("usage_report", None)
         self.stdout = kwargs.get("stdout", None)
         self.stderr = kwargs.get("stderr", None)
-        self.tool_logs = kwargs.get("tool_logs", False)
         self.secret_config = kwargs.get("secret_config", None)
-        self.volume_size = kwargs.get("volume_size", "10Gi")
         self.cwl = kwargs.get("cwl")
 
+        # namespace
+        self.ns_resource_quota = kwargs.get("namespace_quota", None)
+        self.ns_labels = kwargs.get("namespace_labels", None)
+        self.ns_annotations = kwargs.get("namespace_annotations", None)
+
+        # pods
+        self.pod_env_vars = kwargs.get("pod_env_vars", None)
+        self.pod_labels = kwargs.get("pod_labels", None)  # not implemented
+        self.pod_node_selector = kwargs.get("pod_node_selector", None)
+        self.security_context = kwargs.get("security_context", None)
+
+        # flags
+        self.tool_logs = kwargs.get("tool_logs", False)
         self.keep_resources = kwargs.get("keep_resources", False)
 
         logger.info(kwargs["params"])
@@ -101,6 +115,43 @@ class Helper:
             f"calrissian-{str(datetime.now().timestamp()).replace('.', '')}"
             f"-{uuid.uuid4()}"
         )
+
+    def get_resource_quota(self):
+        """returns the namespace resource quota"""
+        if self.ns_resource_quota:
+            with open(self.ns_resource_quota) as fp:
+                content = yaml.load(fp, Loader=yaml.SafeLoader)
+
+            return content
+
+    def get_namespace_labels(self):
+        """return the namespace labels"""
+        if self.ns_labels:
+            with open(self.ns_labels) as fp:
+                content = yaml.load(fp, Loader=yaml.SafeLoader)
+
+            return content
+
+    def get_namespace_annotations(self):
+        """return the namespace annotations"""
+        if self.ns_annotations:
+            with open(self.ns_annotations) as fp:
+                content = yaml.load(fp, Loader=yaml.SafeLoader)
+
+            return content
+
+    def get_pod_service_account(self):
+        if self.pod_service_account:
+            logger.warning("pod service account is not implemented")
+            sys.exit(1)
+
+    def get_security_context(self):
+        """return the security context"""
+        if self.security_context:
+            with open(self.security_context) as fp:
+                content = yaml.load(fp, Loader=yaml.SafeLoader)
+
+            return content
 
     def get_secret_config(self):
         with open(self.secret_config) as f:
@@ -148,10 +199,29 @@ class Helper:
             return self.max_ram
 
     def get_pod_env_vars(self):
+        """return the pod env vars"""
+        if self.pod_env_vars:
+            with open(self.pod_env_vars) as fp:
+                content = yaml.load(fp, Loader=yaml.SafeLoader)
+
+            return content
         return None
 
     def get_pod_node_selector(self):
-        return None
+        """return the pod node selector"""
+        if self.pod_node_selector:
+            with open(self.pod_node_selector) as fp:
+                content = yaml.load(fp, Loader=yaml.SafeLoader)
+
+            return content
+
+    def get_pod_labels(self):
+        """return the pod labels"""
+        if self.pod_labels:
+            with open(self.pod_labels) as fp:
+                content = yaml.load(fp, Loader=yaml.SafeLoader)
+
+            return content
 
     def get_tool_logs(self):
         return self.tool_logs
@@ -284,18 +354,33 @@ class Helper:
     "pod_labels",
     help="YAML file of labels to add to pods submitted",
     required=False,
+    type=click.Path(exists=True),
 )
 @click.option(
-    "--pod-nodeselectors",
-    "usage_report",
+    "--pod-env-vars",
+    "pod_env_vars",
+    help="YAML file with pod env vars",
+    required=False,
+    type=click.Path(exists=True),
+)
+@click.option(
+    "--pod-node-selectors",
+    "pod_node_selector",
     help="YAML file of node selectors to select "
     "the nodes where the pods will be scheduled",
     required=False,
+    type=click.Path(exists=True),
 )
 @click.option(
     "--pod-serviceaccount",
     "pod_service_account",
-    help="Service Account to use for pods management",
+    help="Service Account to use for pods management (not implemented yet)",
+    required=False,
+)
+@click.option(
+    "--security-context",
+    "security_context",
+    help="Security context to use fror running the pods",
     required=False,
 )
 @click.option(
@@ -319,7 +404,7 @@ class Helper:
 @click.option(
     "--tool-logs",
     "tool_logs",
-    help="Retrieve the tool logs",
+    help="If set, the tool logs are retrieved",
     is_flag=True,
     required=False,
 )
@@ -334,6 +419,13 @@ class Helper:
     "--debug",
     "debug",
     help="Sets the debug mode",
+    is_flag=True,
+    required=False,
+)
+@click.option(
+    "--no-read-only",
+    "no_read_only",
+    help="Do not set root directory in the pod as read-only",
     is_flag=True,
     required=False,
 )
@@ -355,11 +447,34 @@ class Helper:
     help="Job execution monitoring interval in seconds",
     required=False,
 )
+@click.option(
+    "--namespace-labels",
+    "namespace_labels",
+    help="A YAML file with the namespace labels",
+    required=False,
+    type=click.Path(exists=True),
+)
+@click.option(
+    "--namespace-annotations",
+    "namespace_annotations",
+    help="A YAML file with the namespace annotations",
+    required=False,
+    type=click.Path(exists=True),
+)
+@click.option(
+    "--namespace-quota",
+    "namespace_quota",
+    help="A YAML file with the namespace resource quota",
+    required=False,
+    type=click.Path(exists=True),
+)
 @click.argument("cwl", nargs=1)
 @click.argument("params", required=False, nargs=-1)
 @click.pass_context
 def main(ctx, **kwargs):
     helper = Helper(ctx, **kwargs)
+
+    logger.debug(helper.get_resource_quota())
 
     namespace = helper.get_namespace_name()
     logger.info(f"namespace: {namespace}")
@@ -368,6 +483,9 @@ def main(ctx, **kwargs):
         storage_class=helper.storage_class,
         volume_size=helper.get_volume_size(),
         image_pull_secrets=helper.get_secret_config(),
+        resource_quota=helper.get_resource_quota(),
+        labels=helper.get_namespace_labels(),
+        annotations=helper.get_namespace_annotations(),
     )
 
     session.initialise()
@@ -384,8 +502,10 @@ def main(ctx, **kwargs):
         pod_env_vars=helper.get_pod_env_vars(),
         pod_node_selector=helper.get_pod_node_selector(),
         debug=helper.debug,
-        no_read_only=helper.read_only,
+        no_read_only=helper.no_read_only,
         tool_logs=helper.get_tool_logs(),
+        security_context=helper.get_security_context(),
+        service_account=helper.get_pod_service_account(),
     )
 
     execution = CalrissianExecution(job=job, runtime_context=session)

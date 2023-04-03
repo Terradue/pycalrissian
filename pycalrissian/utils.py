@@ -145,7 +145,8 @@ class HelperPod:
                     # print("STDOUT: %s" % len(out))
                     tar_buffer.write(out.encode("utf-8"))
                 if resp.peek_stderr():
-                    print("STDERR: %s" % resp.read_stderr())
+                    pass
+                # print("STDERR: %s" % resp.read_stderr())
             resp.close()
 
             tar_buffer.flush()
@@ -170,7 +171,7 @@ def copy_to_volume(
 
     try:
         for source_path in source_paths:
-            print(f"copy {source_path} to {destination_path}")
+            # print(f"copy {source_path} to {destination_path}")
             helper_pod.copy_to_volume(
                 src_path=source_path,
                 dest_path=os.path.join(destination_path, os.path.basename(source_path)),
@@ -190,7 +191,7 @@ def copy_from_volume(
 
     try:
         for source_path in source_paths:
-            print(f"copy {source_path} to {destination_path}")
+            # print(f"copy {source_path} to {destination_path}")
             helper_pod.copy_from_volume(
                 src_path=source_path,
                 dest_path=destination_path,

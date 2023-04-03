@@ -1,0 +1,2 @@
+requests.cpu: 32000m
+requests.memory: 48G

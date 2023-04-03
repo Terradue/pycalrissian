@@ -21,11 +21,6 @@ class ContainerNames(Enum):
     CALRISSIAN = "calrissian"
 
 
-# SIDECAR_USAGE = "sidecar-container-usage"
-# SIDECAR_OUTPUT = "sidecar-container-output"
-# SIDECAR_COPY = "sidecar-container-copy"
-
-
 class CalrissianJob:
     def __init__(
         self,
@@ -55,7 +50,7 @@ class CalrissianJob:
         self.max_ram = max_ram
         self.max_cores = max_cores
         self.security_context = security_context
-        self.service_account = service_account
+        self.service_account = service_account  # not implemented
         self.storage_class = storage_class  # check this, is it needed?
         self.debug = debug
         self.no_read_only = no_read_only

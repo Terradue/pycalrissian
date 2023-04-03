@@ -24,6 +24,7 @@ nav:
   - Introduction: 'index.md'
   - Installation: 'installation.md'
   - Getting started: 'gettingstarted.ipynb'
+  - Command-line: 'cli.md'
   - API:
     - pycalrissian.CalrissianContext : api/pycalrissian/context.md
     - pycalrissian.CalrissianJob : api/pycalrissian/job.md

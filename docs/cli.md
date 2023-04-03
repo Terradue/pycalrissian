@@ -12,27 +12,31 @@ Usage: calrissiantool [OPTIONS] CWL [PARAMS]...
   Execute a Calrissian job from a CWL description
 
 Options:
-  --max-ram TEXT             Maximum amount of RAM to use, e.g 1048576, 512Mi
-                             or 2G. Follows k8s resource conventions
-  --max-cores TEXT           Maximum number of CPU cores to use
-  --volume-size TEXT         Size of the RWX volume for CWL temporary and
-                             output files
-  --pod-labels TEXT          YAML file of labels to add to pods submitted
-  --pod-nodeselectors TEXT   YAML file of node selectors to select the nodes
-                             where the pods will be scheduled
-  --pod-serviceaccount TEXT  Service Account to use for pods management
-  --usage-report TEXT        Output JSON file name to record resource usage
-  --stdout TEXT              Output file name to tee standard output (CWL
-                             output object)
-  --stderr TEXT              Output file name to tee standard error to
-                             (includes tool logs)
-  --tool-logs                Retrieve the tool logs
-  --keep-resources           Keep kubernetes resources. Defaults to False
-  --debug                    Sets the debug mode
-  --storage-class TEXT       ReadWriteMany storage class to use for the job
-  --secret-config TEXT       Image pull secrets file  [required]
-  --monitor-interval TEXT    Job execution monitoring interval in seconds
-  --help                     Show this message and exit.
+  --max-ram TEXT                Maximum amount of RAM to use, e.g 1048576,
+                                512Mi or 2G. Follows k8s resource conventions
+  --max-cores TEXT              Maximum number of CPU cores to use
+  --volume-size TEXT            Size of the RWX volume for CWL temporary and
+                                output files
+  --pod-labels TEXT             YAML file of labels to add to pods submitted
+  --pod-env-vars TEXT           YAML file with pod env vars
+  --pod-node-selectors TEXT     YAML file of node selectors to select the
+                                nodes where the pods will be scheduled
+  --pod-serviceaccount TEXT     Service Account to use for pods management
+  --usage-report TEXT           Output JSON file name to record resource usage
+  --stdout TEXT                 Output file name to tee standard output (CWL
+                                output object)
+  --stderr TEXT                 Output file name to tee standard error to
+                                (includes tool logs)
+  --tool-logs                   Retrieve the tool logs
+  --keep-resources              Keep kubernetes resources. Defaults to False
+  --debug                       Sets the debug mode
+  --storage-class TEXT          ReadWriteMany storage class to use for the job
+  --secret-config TEXT          Image pull secrets file  [required]
+  --monitor-interval TEXT       Job execution monitoring interval in seconds
+  --namespace-labels TEXT       A YAML file with the namespace labels
+  --namespace-annotations TEXT  A YAML file with the namespace annotations
+  --namespace-quota TEXT        A YAML file with the namespace resource quota
+  --help                        Show this message and exit.
 ```
 
 ## Options
@@ -53,6 +57,90 @@ Size of the ReadWriteMay volume for CWL temporary and output files
 **--pod-labels**
 
 YAML file of labels to add to pods submitted
+
+**--namespace-labels**
+
+A YAML file with the namespace labels.
+
+Example:
+
+```
+calrissiantool --namespace-labels ns-labels.yaml ...
+```
+
+Where the file `ns-labels.yaml` contains:
+
+```yaml
+ns_label_1: value_1
+ns_label_2: value_2
+```
+
+**--namespace-annotations**
+
+A YAML file with the namespace annotations.
+
+Example:
+
+```
+calrissiantool --namespace-annotations ns-annotations.yaml ...
+```
+
+Where the file `ns-annotations.yaml` contains:
+
+```yaml
+ns_annotation_1: value_1
+ns_annotation_2: value_2
+```
+
+**--namespace-quota**
+
+A YAML file with the namespace resource quota.
+
+Example:
+
+```
+calrissiantool --namespace-quota resource-quota.yaml ...
+```
+
+Where the file `resource-quota.yaml` contains:
+
+```yaml
+requests.cpu: 32000m
+requests.memory: 48G
+```
+
+**--pod-env-vars**
+
+A YAML file with environment variables for the pods spwaned by `calrissian`
+
+Example:
+
+```
+calrissiantool --pod-env-vars pod-env-vars.yaml ...
+```
+
+Where the file `pod-env-vars.yaml` contains:
+
+```yaml
+env_var_1: "value_1"
+env_var_2: "value_2"
+```
+
+**--pod-node-selectors**
+
+A YAML file with the cluster node selectors for the pods spwaned by `calrissian`
+
+Example:
+
+```
+calrissiantool --pod-node-selectors pod-node-selectors.yaml ...
+```
+
+Where the file `pod-node-selectors.yaml` contains:
+
+```yaml
+"k8s.scaleway.com/pool-name": default
+```
 
 ## Examples
 
