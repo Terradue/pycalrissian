@@ -284,7 +284,7 @@ class Helper:
         """return the tool logs flag, if true, the tool logs will be retrieved"""
         return self.tool_logs
 
-    def handle_outputs(self, execution):
+    def handle_outputs(self, execution: CalrissianExecution):
         """handle the outputs of the execution"""
         output = None
 
@@ -295,7 +295,7 @@ class Helper:
 
         if self.stdout:
             try:
-                json.dump(output, open(self.stdout, "w"))
+                json.dump(output, open(self.stdout, "w"), indent=2)
                 logger.info(f"Output retrieved and saved to {self.stdout}")
             except json.decoder.JSONDecodeError:
                 logger.error("Failed to retrieve the execution output")
@@ -309,7 +309,7 @@ class Helper:
         if self.usage_report:
             usage_report = execution.get_usage_report()
             try:
-                json.dump(usage_report, open(self.usage_report, "w"))
+                json.dump(usage_report, open(self.usage_report, "w"), indent=2)
                 logger.info(f"Usage report retrieved and saved to {self.usage_report}")
             except json.decoder.JSONDecodeError:
                 logger.error("Failed to retrieve the usage report")
