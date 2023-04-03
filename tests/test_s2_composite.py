@@ -53,7 +53,6 @@ class TestCalrissianExecution(unittest.TestCase):
         cls.session.dispose()
 
     def test_s2_composite_job(self):
-
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:

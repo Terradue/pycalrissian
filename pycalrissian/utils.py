@@ -18,7 +18,6 @@ from pycalrissian.context import CalrissianContext
 
 class HelperPod:
     def __init__(self, context: CalrissianContext, volume: Dict, volume_mount: Dict):
-
         self.context = context
         self.volume = volume
         self.volume_mount = volume_mount
@@ -32,7 +31,6 @@ class HelperPod:
         return str(uuid.uuid4())[-6:]
 
     def _create_pod(self):
-
         pod_manifest = {
             "apiVersion": "v1",
             "kind": "Pod",
@@ -168,7 +166,6 @@ def copy_to_volume(
     source_paths: list,
     destination_path: str,
 ):
-
     helper_pod = HelperPod(context=context, volume=volume, volume_mount=volume_mount)
 
     try:
@@ -189,7 +186,6 @@ def copy_from_volume(
     source_paths: list,
     destination_path: str,
 ):
-
     helper_pod = HelperPod(context=context, volume=volume, volume_mount=volume_mount)
 
     try:

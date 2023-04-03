@@ -53,7 +53,6 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         cls.session.dispose()
 
     def test_job_tool_logs(self):
-
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
         with open("tests/logs.cwl", "r") as stream:

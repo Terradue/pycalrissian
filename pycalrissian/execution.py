@@ -94,7 +94,6 @@ class CalrissianExecution:
                 return {}
 
     def get_file_from_volume(self, filenames):
-
         volume = {
             "name": self.job.volume_calrissian_wdir,
             "persistentVolumeClaim": {
@@ -143,9 +142,7 @@ class CalrissianExecution:
             ]
 
     def _get_container_log(self, container):
-
         try:
-
             pod_label_selector = f"job-name={self.job.job_name}"
             pods_list = self.runtime_context.core_v1_api.list_namespaced_pod(
                 namespace=self.runtime_context.namespace,
@@ -201,12 +198,10 @@ class CalrissianExecution:
     def monitor(
         self, interval: int = 5, grace_period=120, wall_time: Optional[int] = None
     ) -> None:
-
         if self.is_active():
             iterations = 0
 
             while self.is_active():
-
                 logger.info(f"job {self.job.job_name} is active")
                 time.sleep(interval)
                 iterations = iterations + 1
@@ -244,7 +239,6 @@ class CalrissianExecution:
             logger.warning("job is not submitted")
 
     def get_waiting_pods(self) -> List[V1Pod]:
-
         pods_waiting = []
 
         response = self.runtime_context.core_v1_api.list_namespaced_pod(
@@ -255,7 +249,6 @@ class CalrissianExecution:
             for pod in response.items:
                 if pod.status.container_statuses:
                     for con_status in pod.status.container_statuses:
-
                         if (
                             con_status.state.waiting
                             and con_status.state.waiting.reason in ["ImagePullBackOff"]

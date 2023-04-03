@@ -1,0 +1,4 @@
+input_reference:
+- "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A"
+s_expression:
+- "blue:(* B01 B01)"

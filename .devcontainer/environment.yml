@@ -16,3 +16,5 @@ dependencies:
   - pip:
     - kubernetes
     - loguru
+    - cwl-utils==0.12
+    - attrs

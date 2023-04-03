@@ -50,9 +50,7 @@ class TestCalrissianExecution(unittest.TestCase):
         cls.session.dispose()
 
     def test_simple_job(self):
-
         with open("tests/simple.cwl", "r") as stream:
-
             cwl = yaml.safe_load(stream)
 
         params = {"message": "hello world!"}
@@ -87,7 +85,6 @@ class TestCalrissianExecution(unittest.TestCase):
     def test_wrong_docker_pull_job(self):
         """tests the imagepullbackoff state of a pod, the job is killed"""
         with open("tests/wrong_docker_pull.cwl", "r") as stream:
-
             cwl = yaml.safe_load(stream)
 
         params = {"message": "hello world!"}
@@ -118,7 +115,6 @@ class TestCalrissianExecution(unittest.TestCase):
     def test_high_reqs_job(self):
         """tests the high reqs for RAM and cores, the job is killed"""
         with open("tests/high_reqs.cwl", "r") as stream:
-
             cwl = yaml.safe_load(stream)
 
         params = {"message": "hello world!"}
@@ -149,7 +145,6 @@ class TestCalrissianExecution(unittest.TestCase):
     def test_wall_time_reached_job(self):
         """tests wall time reached, the job is killed"""
         with open("tests/sleep.cwl", "r") as stream:
-
             cwl = yaml.safe_load(stream)
 
         params = {"message": "hello world!"}
@@ -177,7 +172,6 @@ class TestCalrissianExecution(unittest.TestCase):
     def test_wall_time_not_reached_job(self):
         """tests wall time reached, the job is killed"""
         with open("tests/sleep.cwl", "r") as stream:
-
             cwl = yaml.safe_load(stream)
 
         params = {"message": "hello world!"}

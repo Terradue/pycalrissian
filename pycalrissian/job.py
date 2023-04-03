@@ -46,7 +46,6 @@ class CalrissianJob:
         backoff_limit: int = 2,
         tool_logs: bool = False,
     ):
-
         self.cwl = cwl
         self.params = params
         self.runtime_context = runtime_context
@@ -269,7 +268,6 @@ class CalrissianJob:
     def create_container(
         image, name, args, command, volume_mounts, env, pull_policy="Always"
     ):
-
         container = client.V1Container(
             image=image,
             name=name,
@@ -334,7 +332,6 @@ class CalrissianJob:
         return job
 
     def _get_calrissian_args(self) -> List:
-
         args = []
 
         args.extend(
@@ -432,7 +429,6 @@ class CalrissianJob:
 
     @staticmethod
     def shorten_namespace(value: str) -> str:
-
         while len(value) > 63:
             value = value[:-1]
             while value.endswith("-"):

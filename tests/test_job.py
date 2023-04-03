@@ -79,7 +79,6 @@ class TestCalrissianJob(unittest.TestCase):
         self.assertIsInstance(job.to_k8s_job(), V1Job)
 
     def test_calrissian_image(self):
-
         os.environ["CALRISSIAN_IMAGE"] = "someimage:latest"
 
         document = "tests/simple.cwl"

@@ -15,6 +15,7 @@
 		"PATH": "${containerEnv:PATH}:/opt/conda/envs/env_calrissian/bin"},
 	"postCreateCommand": "/opt/conda/envs/env_calrissian/bin/pre-commit install",
 	"mounts": [
-		"source=${localEnv:HOME}/.kube,target=/home/mambauser/.kube,type=bind"
+		"source=${localEnv:HOME}/.kube,target=/home/mambauser/.kube,type=bind",
+		"source=${localEnv:HOME}/.docker,target=/home/mambauser/.docker,type=bind"
 	  ]
 }

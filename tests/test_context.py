@@ -21,11 +21,9 @@ class TestCalrissianContext(unittest.TestCase):
         cls.namespace = "dummy-namespace"
 
     def test_env(self):
-
         self.assertIsNotNone(os.getenv("KUBECONFIG", None))
 
     def test_core_v1_api(self):
-
         session = CalrissianContext(
             namespace=self.namespace, storage_class="dummy", volume_size="1G"
         )
@@ -33,7 +31,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsNotNone(session.core_v1_api)
 
     def test_rbac_authorization_v1_api(self):
-
         session = CalrissianContext(
             namespace=self.namespace, storage_class="dummy", volume_size="1G"
         )
@@ -41,7 +38,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsNotNone(session.rbac_authorization_v1_api)
 
     def test_create_namespace(self):
-
         session = CalrissianContext(
             namespace=self.namespace, storage_class="dummy", volume_size="1G"
         )
@@ -55,7 +51,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsNotNone(response)
 
     def test_create_role_1(self):
-
         session = CalrissianContext(
             namespace=self.namespace, storage_class="dummy", volume_size="1G"
         )
@@ -82,7 +77,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1Role)
 
     def test_create_role_binding_1(self):
-
         session = CalrissianContext(
             namespace=self.namespace, storage_class="dummy", volume_size="1G"
         )
@@ -113,7 +107,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1RoleBinding)
 
     def test_create_volume(self):
-
         session = CalrissianContext(
             namespace=self.namespace,
             storage_class="microk8s-hostpath",
@@ -133,7 +126,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1PersistentVolumeClaim)
 
     def test_configmap_from_dict_as_yaml(self):
-
         session = CalrissianContext(
             namespace=self.namespace,
             storage_class="microk8s-hostpath",
@@ -161,7 +153,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1ConfigMap)
 
     def test_configmap_from_dict_as_json(self):
-
         session = CalrissianContext(
             namespace=self.namespace,
             storage_class="microk8s-hostpath",
@@ -186,7 +177,6 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1ConfigMap)
 
     def test_secret_creation(self):
-
         username = "pippo"
         password = "pippo"
         email = "john.doe@me.com"

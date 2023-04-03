@@ -55,7 +55,6 @@ class TestCalrissianExecution(unittest.TestCase):
         cls.session.dispose()
 
     def test_job(self):
-
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
 

@@ -51,5 +51,4 @@ class TestCalrissianExecution(unittest.TestCase):
         pass
 
     def test_session_dispose(self):
-
         self.session.dispose()

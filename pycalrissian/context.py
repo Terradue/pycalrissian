@@ -126,7 +126,6 @@ class CalrissianContext:
             self.create_resource_quota(name="calrissian-resource-quota")
 
     def dispose(self):
-
         response = self.core_v1_api.list_namespaced_pod(self.namespace)
 
         for pod in response.items:
@@ -152,7 +151,6 @@ class CalrissianContext:
             raise e
 
     def delete_pod(self, name):
-
         try:
             response = self.core_v1_api.delete_namespaced_pod(name, self.namespace)
             return response
@@ -161,7 +159,6 @@ class CalrissianContext:
 
     @staticmethod
     def _get_api_client(kubeconfig_file: TextIO = None):
-
         proxy_url = os.getenv("HTTP_PROXY", None)
         kubeconfig = os.getenv("KUBECONFIG", None)
 
@@ -187,19 +184,15 @@ class CalrissianContext:
         return api_client
 
     def _get_core_v1_api(self) -> client.CoreV1Api:
-
         return client.CoreV1Api(api_client=self.api_client)
 
     def _get_batch_v1_api(self) -> client.BatchV1Api:
-
         return client.BatchV1Api(api_client=self.api_client)
 
     def _get_rbac_authorization_v1_api(self) -> client.RbacAuthorizationApi:
-
         return client.RbacAuthorizationV1Api(self.api_client)
 
     def is_object_created(self, read_method, **kwargs):
-
         read_methods = {}
 
         read_methods["read_namespace"] = self.core_v1_api.read_namespace
@@ -246,7 +239,6 @@ class CalrissianContext:
         return read_methods
 
     def is_namespace_created(self, **kwargs):
-
         return self.is_object_created("read_namespace", **kwargs)
 
     def is_namespace_deleted(self, **kwargs):
@@ -254,29 +246,23 @@ class CalrissianContext:
         return not self.is_namespace_created()
 
     def is_role_binding_created(self, **kwargs):
-
         return self.is_object_created("read_namespaced_role_binding", **kwargs)
 
     def is_role_created(self, **kwargs):
-
         return self.is_object_created("read_namespaced_role", **kwargs)
 
     def is_config_map_created(self, **kwargs):
-
         return self.is_object_created("read_namespaced_config_map", **kwargs)
 
     def is_pvc_created(self, **kwargs):
-
         return self.is_object_created(
             "read_namespaced_persistent_volume_claim", **kwargs
         )  # noqa: E501
 
     def is_resource_quota_created(self, **kwargs):
-
         return self.is_object_created("read_namespaced_resource_quota", **kwargs)
 
     def is_image_pull_secret_created(self, **kwargs):
-
         return self.is_object_created("read_namespaced_secret", **kwargs)
 
     @staticmethod
@@ -297,7 +283,6 @@ class CalrissianContext:
     def create_namespace(
         self, labels: dict = None, annotations: dict = None
     ) -> client.V1Namespace:
-
         if self.is_namespace_created():
             logger.info(f"namespace {self.namespace} exists, skipping creation")
             return self.core_v1_api.read_namespace(name=self.namespace)
@@ -328,9 +313,7 @@ class CalrissianContext:
         resources: list = ["pods", "pods/log"],
         api_groups: list = ["*"],
     ):
-
         if self.is_role_created(name=name):
-
             return self.rbac_authorization_v1_api.read_namespaced_role(
                 name=name, namespace=self.namespace
             )
@@ -365,9 +348,7 @@ class CalrissianContext:
             raise e
 
     def create_role_binding(self, name: str, role: str):
-
         if self.is_role_binding_created(name=name):
-
             return self.rbac_authorization_v1_api.read_namespaced_role_binding(
                 name=name, namespace=self.namespace
             )
@@ -404,9 +385,7 @@ class CalrissianContext:
             raise e
 
     def create_resource_quota(self, name):
-
         if self.is_resource_quota_created(name=name):
-
             return self.core_v1_api.read_namespaced_resource_quota(
                 name=name, namespace=self.namespace
             )
@@ -453,9 +432,7 @@ class CalrissianContext:
         size,
         storage_class,
     ):
-
         if self.is_pvc_created(name=name):
-
             return self.core_v1_api.read_namespaced_persistent_volume_claim(
                 name=name, namespace=self.namespace
             )
@@ -497,9 +474,7 @@ class CalrissianContext:
         annotations: Dict = {},
         labels: Dict = {},
     ):
-
         if self.is_config_map_created(name=name):
-
             self.core_v1_api.delete_namespaced_config_map(
                 namespace=self.namespace, name=name
             )  # noqa: E501
@@ -542,9 +517,7 @@ class CalrissianContext:
         self,
         name,
     ):
-
         if self.is_image_pull_secret_created(name=name):
-
             return self.core_v1_api.read_namespaced_secret(
                 namespace=self.namespace, name=name
             )  # noqa: E501
