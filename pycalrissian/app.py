@@ -50,35 +50,34 @@ class Helper:
         self.storage_class = kwargs.get("storage_class", "default")
 
         # job resources
-        self.max_ram = kwargs.get("max_ram", None)
-        self.max_cores = kwargs.get("max_cores", None)
-        self.volume_size = kwargs.get("volume_size", "10Gi")
+        self.max_ram = kwargs.get("max_ram")
+        self.max_cores = kwargs.get("max_cores")
+        self.volume_size = kwargs.get("volume_size")
 
-        self.debug = kwargs.get("debug", False)
-        self.no_read_only = kwargs.get("no_read_only", False)
-        self.monitor_interval = kwargs.get("monitor_interval", 15)
-
-        self.pod_service_account = kwargs.get("pod_service_account", None)
-        self.usage_report = kwargs.get("usage_report", None)
-        self.stdout = kwargs.get("stdout", None)
-        self.stderr = kwargs.get("stderr", None)
-        self.secret_config = kwargs.get("secret_config", None)
+        self.debug = kwargs.get("debug")
+        self.no_read_only = kwargs.get("no_read_only")
+        self.monitor_interval = kwargs.get("monitor_interval")
+        self.pod_service_account = kwargs.get("pod_service_account")
+        self.usage_report = kwargs.get("usage_report")
+        self.stdout = kwargs.get("stdout")
+        self.stderr = kwargs.get("stderr")
+        self.secret_config = kwargs.get("secret_config")
         self.cwl = kwargs.get("cwl")
 
         # namespace
-        self.ns_resource_quota = kwargs.get("namespace_quota", None)
-        self.ns_labels = kwargs.get("namespace_labels", None)
-        self.ns_annotations = kwargs.get("namespace_annotations", None)
+        self.ns_resource_quota = kwargs.get("namespace_quota")
+        self.ns_labels = kwargs.get("namespace_labels")
+        self.ns_annotations = kwargs.get("namespace_annotations")
 
         # pods
-        self.pod_env_vars = kwargs.get("pod_env_vars", None)
-        self.pod_labels = kwargs.get("pod_labels", None)  # not implemented
-        self.pod_node_selector = kwargs.get("pod_node_selector", None)
-        self.security_context = kwargs.get("security_context", None)
+        self.pod_env_vars = kwargs.get("pod_env_vars")
+        self.pod_labels = kwargs.get("pod_labels")  # not implemented
+        self.pod_node_selector = kwargs.get("pod_node_selector")
+        self.security_context = kwargs.get("security_context")
 
         # flags
-        self.tool_logs = kwargs.get("tool_logs", False)
-        self.keep_resources = kwargs.get("keep_resources", False)
+        self.tool_logs = kwargs.get("tool_logs")
+        self.keep_resources = kwargs.get("keep_resources")
 
         logger.info(f"Processing {self.cwl}")
         if not kwargs["params"]:
@@ -174,7 +173,13 @@ class Helper:
             ) + max(
                 max(resources["outdirMin"] or [0]), max(resources["outdirMax"] or [0])
             )
-
+            if volume_size == 0:
+                logger.error(
+                    "No volume size provided and no resources requirements found in CWL"
+                )
+                raise ValueError(
+                    "No volume size provided and no resources requirements found in CWL"
+                )
             return f"{volume_size}Mi"
 
     def get_monitoring_interval(self):
@@ -188,13 +193,17 @@ class Helper:
         if scheme in ["http", "https"]:
             r = requests.get(cwl_file, stream=True)
             if r.status_code == 404:
+                logger.error(f"{cwl_file} not Found!")
                 raise requests.RequestException("404 Not Found!")
             r.raw.decode_content = True
             content = yaml.safe_load(r.raw)
         else:
-            with open(cwl_file) as fp:
-                content = yaml.load(fp, Loader=yaml.SafeLoader)
-
+            try:
+                with open(cwl_file) as stream:
+                    content = yaml.load(stream, Loader=yaml.SafeLoader)
+            except yaml.YAMLError as exc:
+                logger.error(f"an error occured reading {cwl_file}")
+                raise exc
         return content
 
     def get_cwl_entry_point(self):
@@ -217,6 +226,13 @@ class Helper:
             max_cores = max(
                 max(resources["coresMin"] or [0]), max(resources["coresMax"] or [0])
             )
+            if max_cores == 0:
+                logger.error(
+                    "No max cores provided and no resources requirements found in CWL"
+                )
+                raise ValueError(
+                    "No max cores provided and no resources requirements found in CWL"
+                )
             logger.info(f"max cores: {max_cores}")
             return max_cores
 
@@ -229,6 +245,13 @@ class Helper:
             max_ram = max(
                 max(resources["ramMin"] or [0]), max(resources["ramMax"] or [0])
             )
+            if max_ram == 0:
+                logger.error(
+                    "No max ram provided and no resources requirements found in CWL"
+                )
+                raise ValueError(
+                    "No max ram provided and no resources requirements found in CWL"
+                )
             logger.info(f"max ram: {max_ram}Mi")
             return f"{max_ram}Mi"
 
@@ -526,6 +549,8 @@ class Helper:
     "monitor_interval",
     help="Job execution monitoring interval in seconds",
     required=False,
+    default=15,
+    type=int,
 )
 @click.option(
     "--namespace-labels",
@@ -557,12 +582,19 @@ def main(ctx, **kwargs):
     if helper.get_pod_service_account():
         raise NotImplementedError("Service account is not implemented yet")
 
+    processing_parameters = helper.get_processing_parameters()
+    cwl = helper.get_cwl()
+    cwl_entry_point = helper.get_cwl_entry_point()
+    max_cores = helper.get_max_cores()
+    max_ram = helper.get_max_ram()
+    volume_size = helper.get_volume_size()
+
     namespace = helper.get_namespace_name()
     logger.info(f"namespace: {namespace}")
     session = CalrissianContext(
         namespace=namespace,
         storage_class=helper.storage_class,
-        volume_size=helper.get_volume_size(),
+        volume_size=volume_size,
         image_pull_secrets=helper.get_secret_config(),
         resource_quota=helper.get_resource_quota(),
         labels=helper.get_namespace_labels(),
@@ -571,15 +603,13 @@ def main(ctx, **kwargs):
 
     session.initialise()
 
-    processing_parameters = helper.get_processing_parameters()
-
     job = CalrissianJob(
-        cwl=helper.get_cwl(),
+        cwl=cwl,
         params=processing_parameters,
         runtime_context=session,
-        cwl_entry_point=helper.get_cwl_entry_point(),
-        max_cores=helper.get_max_cores(),
-        max_ram=helper.get_max_ram(),
+        cwl_entry_point=cwl_entry_point,
+        max_cores=max_cores,
+        max_ram=max_ram,
         pod_env_vars=helper.get_pod_env_vars(),
         pod_node_selector=helper.get_pod_node_selector(),
         debug=helper.debug,

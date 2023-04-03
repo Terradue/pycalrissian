@@ -7,3 +7,4 @@ dist
 *.tif
 catalog.json
 job.yml
+*.log

@@ -171,3 +171,21 @@ input_reference:
 s_expression:
 - "blue:(* B01 B01)"
 ```
+
+```
+calrissiantool \
+  --storage-class "openebs-nfs-test" \
+  --secret-config ~/.docker/config.json \
+  --stdout out.json \
+  --stderr log.err \
+  --debug \
+  --usage-report report.json \
+  --namespace-quota tests/resource_quota.yaml \
+  --namespace-labels tests/ns-labels.yaml \
+  --namespace-annotations tests/ns-annotations.yaml \
+  --pod-env-vars tests/pod-env-vars.yaml  \
+  --pod-node-selectors tests/pod-node-selectors.yaml \
+  --volume-size 10G \
+  "https://github.com/Terradue/ogc-eo-application-package-hands-on/releases/download/1.1.7/app-water-bodies.1.1.7.cwl#water_bodies" \
+  tests/params.yml
+```
