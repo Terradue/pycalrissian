@@ -1,4 +1,3 @@
-import sys
 import click
 import cwl_utils
 import yaml
@@ -7,6 +6,7 @@ import requests
 import attr
 import inspect
 import uuid
+from cwl_utils.parser import load_document_by_yaml
 from datetime import datetime
 from collections import defaultdict
 from loguru import logger
@@ -143,7 +143,7 @@ class Helper:
     def get_pod_service_account(self):
         if self.pod_service_account:
             logger.warning("pod service account is not implemented")
-            sys.exit(1)
+            raise NotImplementedError
 
     def get_security_context(self):
         """return the security context"""
@@ -159,7 +159,19 @@ class Helper:
         return data
 
     def get_volume_size(self):
-        return self.volume_size
+
+        if self.volume_size:
+
+            return self.volume_size
+        else:
+            resources = self.eval_resources()
+            volume_size = max(
+                max(resources["tmpdirMin"] or [0]), max(resources["tmpdirMax"] or [0])
+            ) + max(
+                max(resources["outdirMin"] or [0]), max(resources["outdirMax"] or [0])
+            )
+
+            return f"{volume_size}Mi"
 
     def get_monitoring_interval(self):
         return int(self.monitor_interval)
@@ -191,12 +203,21 @@ class Helper:
         if self.max_cores:
             return int(self.max_cores)
         else:
-            pass
-        return None
+            resources = self.eval_resources()
+
+            return max(
+                max(resources["coresMin"] or [0]), max(resources["coresMax"] or [0])
+            )
 
     def get_max_ram(self):
         if self.max_ram:
             return self.max_ram
+        else:
+            resources = self.eval_resources()
+            max_ram = max(
+                max(resources["ramMin"] or [0]), max(resources["ramMax"] or [0])
+            )
+            return f"{max_ram}Mi"
 
     def get_pod_env_vars(self):
         """return the pod env vars"""
@@ -263,7 +284,50 @@ class Helper:
     def get_processing_parameters(self):
         return self.params
 
-    def eval_resource(self):
+    @staticmethod
+    def get_resource_requirement(elem):
+        """Gets the ResourceRequirement out of a CommandLineTool or Workflow
+
+        Args:
+            elem (CommandLineTool or Workflow): CommandLineTool or Workflow
+
+        Returns:
+            cwl_utils.parser.cwl_v1_2.ResourceRequirement or ResourceRequirement
+        """
+        resource_requirement = [
+            requirement
+            for requirement in elem.requirements
+            if isinstance(
+                requirement,
+                (
+                    cwl_utils.parser.cwl_v1_0.ResourceRequirement,
+                    cwl_utils.parser.cwl_v1_1.ResourceRequirement,
+                    cwl_utils.parser.cwl_v1_2.ResourceRequirement,
+                ),
+            )
+        ]
+
+        if len(resource_requirement) == 1:
+            return resource_requirement[0]
+
+        # look for hints
+        if elem.hints is not None:
+            resource_requirement = [
+                ResourceRequirement.from_dict(hint)
+                for hint in elem.hints
+                if hint["class"] == "ResourceRequirement"
+            ]
+
+        if len(resource_requirement) == 1:
+            return resource_requirement[0]
+
+    def eval_resources(self):
+        cwl = load_document_by_yaml(self.get_cwl(), "io://")
+
+        def get_object_by_id(cwl, id):
+            ids = [elem.id.split("#")[-1] for elem in cwl]
+            return cwl[ids.index(id)]
+
         resources = {
             "coresMin": [],
             "coresMax": [],
@@ -275,7 +339,7 @@ class Helper:
             "outdirMax": [],
         }
 
-        for elem in self.cwl:
+        for elem in cwl:
             if isinstance(
                 elem,
                 (
@@ -301,7 +365,7 @@ class Helper:
                             )
                 for step in elem.steps:
                     if resource_requirement := self.get_resource_requirement(
-                        self.get_object_by_id(step.run[1:])
+                        get_object_by_id(cwl, step.run[1:])
                     ):
                         multiplier = 2 if step.scatter else 1
                         for resource_type in [
@@ -474,7 +538,8 @@ class Helper:
 def main(ctx, **kwargs):
     helper = Helper(ctx, **kwargs)
 
-    logger.debug(helper.get_resource_quota())
+    if helper.get_pod_service_account():
+        raise NotImplementedError("Service account is not implemented yet")
 
     namespace = helper.get_namespace_name()
     logger.info(f"namespace: {namespace}")
