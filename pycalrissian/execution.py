@@ -94,7 +94,7 @@ class CalrissianExecution:
             except json.decoder.JSONDecodeError:
                 return {}
 
-    def get_file_from_volume(self, filenames):
+    def get_file_from_volume(self, filenames, destination_path="."):
         """stages the files from k8s volume"""
         volume = {
             "name": self.job.volume_calrissian_wdir,
@@ -107,7 +107,6 @@ class CalrissianExecution:
             "mountPath": self.job.calrissian_base_path,
         }
 
-        destination_path = "."
         copy_from_volume(
             context=self.runtime_context,
             volume=volume,

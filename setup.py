@@ -17,6 +17,7 @@ extra_files = []
 console_scripts = []
 
 console_scripts.append("calrissiantool=pycalrissian.app:main")
+console_scripts.append("calrissian-runner=pycalrissian.app:main")
 
 
 print(extra_files)

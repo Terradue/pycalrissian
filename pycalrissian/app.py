@@ -1,3 +1,4 @@
+import os
 import inspect
 import json
 import uuid
@@ -78,6 +79,7 @@ class Helper:
         # flags
         self.tool_logs = kwargs.get("tool_logs")
         self.keep_resources = kwargs.get("keep_resources")
+        self.copy_results = kwargs.get("copy_results")
 
         logger.info(f"Processing {self.cwl}")
         if not kwargs["params"]:
@@ -292,6 +294,35 @@ class Helper:
             output = execution.get_output()
         except json.decoder.JSONDecodeError:
             logger.error("Failed to retrieve the execution output")
+
+        def get_files(d):
+            if d["class"] in ["Directory"]:
+                for item in d["listing"]:
+                    if "class" in item.keys() and item["class"] in ["File"]:
+
+                        source = urlparse(item["location"]).path.replace(
+                            "/calrissian/", ""
+                        )
+                        destination = os.path.dirname(
+                            os.path.join(
+                                ".",
+                                urlparse(item["location"]).path.replace(
+                                    "/calrissian/", ""
+                                ),
+                            )
+                        )
+                        logger.info(f"copy {source} to {destination}")
+                        os.makedirs(destination, exist_ok=True)
+                        execution.get_file_from_volume(
+                            filenames=[source], destination_path=destination
+                        )
+                    if "class" in item.keys() and item["class"] in ["Directory"]:
+                        get_files(item)
+
+        if self.copy_results:
+            for entry in output.keys():
+                if output[entry]["class"] in ["Directory"]:
+                    get_files(output[entry])
 
         if self.stdout:
             try:
@@ -572,6 +603,14 @@ class Helper:
     help="A YAML file with the namespace resource quota",
     required=False,
     type=click.Path(exists=True),
+)
+@click.option(
+    "--copy-results",
+    "copy_results",
+    help="Copy results to the current directory (experimental)",
+    is_flag=True,
+    required=False,
+    default=False,
 )
 @click.argument("cwl", nargs=1)
 @click.argument("params", required=False, nargs=-1)
