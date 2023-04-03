@@ -26,7 +26,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pdocs kubernetes loguru pyyaml attrs
+          pip install pdocs kubernetes loguru pyyaml attrs cwl-utils==0.12 click
           python setup.py install
       - name: update API docs
         run: |
