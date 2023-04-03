@@ -1,24 +1,28 @@
+import inspect
+import json
+import uuid
+from collections import defaultdict
+from datetime import datetime
+from urllib.parse import urlparse
+
+import attr
 import click
 import cwl_utils
-import yaml
-import json
 import requests
-import attr
-import inspect
-import uuid
+import yaml
 from cwl_utils.parser import load_document_by_yaml
-from datetime import datetime
-from collections import defaultdict
 from loguru import logger
-from urllib.parse import urlparse
+
 from pycalrissian.context import CalrissianContext
-from pycalrissian.job import CalrissianJob
 from pycalrissian.execution import CalrissianExecution
+from pycalrissian.job import CalrissianJob
 
 
 # useful class for hints in CWL
 @attr.s
 class ResourceRequirement:
+    """ResourceRequirement data class"""
+
     coresMin = attr.ib(default=None)
     coresMax = attr.ib(default=None)
     ramMin = attr.ib(default=None)
@@ -30,6 +34,7 @@ class ResourceRequirement:
 
     @classmethod
     def from_dict(cls, env):
+        """Create a new instance from a dictionary of values."""
         return cls(
             **{k: v for k, v in env.items() if k in inspect.signature(cls).parameters}
         )
@@ -75,30 +80,31 @@ class Helper:
         self.tool_logs = kwargs.get("tool_logs", False)
         self.keep_resources = kwargs.get("keep_resources", False)
 
-        logger.info(kwargs["params"])
+        logger.info(f"Processing {self.cwl}")
         if not kwargs["params"]:
-            raise Exception("No parameters provided")
+            raise ValueError("No parameters provided")
         if kwargs["params"][0].startswith("--"):
             self.params = defaultdict(list)
 
-            for d in [
+            for extra_params in [
                 {item.split("=")[0].replace("--", ""): item.split("=")[1]}
                 for item in kwargs["params"]
             ]:  # you can list as many input dicts as you want here
-                for key, value in d.items():
+                for key, value in extra_params.items():
                     self.params[key].append(value)
             self.params = dict(self.params)
 
         else:
-            logger.info("Parameter provided in a file")
             # opening a file
-            with open(kwargs["params"][0], "r") as stream:
+            with open(kwargs["params"][0], encoding="utf-8", mode="r") as stream:
                 try:
                     # Converts yaml document to python object
                     self.params = yaml.safe_load(stream)
+                    logger.info(f"Parameters provided in file {kwargs['params'][0]}")
                 except yaml.YAMLError as exc:
                     logger.info(f"an error occured: {exc}")
-        logger.info(self.params)
+        for key, value in self.params.items():
+            logger.info(f"Parameter id {key}: {value}")
 
     @staticmethod
     def shorten_namespace(value: str) -> str:
@@ -119,24 +125,24 @@ class Helper:
     def get_resource_quota(self):
         """returns the namespace resource quota"""
         if self.ns_resource_quota:
-            with open(self.ns_resource_quota) as fp:
-                content = yaml.load(fp, Loader=yaml.SafeLoader)
+            with open(self.ns_resource_quota) as stream:
+                content = yaml.load(stream, Loader=yaml.SafeLoader)
 
             return content
 
     def get_namespace_labels(self):
         """return the namespace labels"""
         if self.ns_labels:
-            with open(self.ns_labels) as fp:
-                content = yaml.load(fp, Loader=yaml.SafeLoader)
+            with open(self.ns_labels) as stream:
+                content = yaml.load(stream, Loader=yaml.SafeLoader)
 
             return content
 
     def get_namespace_annotations(self):
         """return the namespace annotations"""
         if self.ns_annotations:
-            with open(self.ns_annotations) as fp:
-                content = yaml.load(fp, Loader=yaml.SafeLoader)
+            with open(self.ns_annotations) as stream:
+                content = yaml.load(stream, Loader=yaml.SafeLoader)
 
             return content
 
@@ -148,8 +154,8 @@ class Helper:
     def get_security_context(self):
         """return the security context"""
         if self.security_context:
-            with open(self.security_context) as fp:
-                content = yaml.load(fp, Loader=yaml.SafeLoader)
+            with open(self.security_context) as stream:
+                content = yaml.load(stream, Loader=yaml.SafeLoader)
 
             return content
 
@@ -159,9 +165,7 @@ class Helper:
         return data
 
     def get_volume_size(self):
-
         if self.volume_size:
-
             return self.volume_size
         else:
             resources = self.eval_resources()
@@ -194,22 +198,30 @@ class Helper:
         return content
 
     def get_cwl_entry_point(self):
+        """returns the entry point of the cwl file"""
         if len(self.cwl.split("#")) == 2:
-            return self.cwl.split("#")[1]
+            entry_point = self.cwl.split("#")[1]
+            logger.info(f"CWL entry point: {entry_point}")
         else:
-            return "main"
+            entry_point = "main"
+            logger.warning("No entry point provided, using main")
+        return entry_point
 
     def get_max_cores(self):
+        """return the max cores"""
         if self.max_cores:
             return int(self.max_cores)
         else:
             resources = self.eval_resources()
 
-            return max(
+            max_cores = max(
                 max(resources["coresMin"] or [0]), max(resources["coresMax"] or [0])
             )
+            logger.info(f"max cores: {max_cores}")
+            return max_cores
 
     def get_max_ram(self):
+        """return the max ram"""
         if self.max_ram:
             return self.max_ram
         else:
@@ -217,6 +229,7 @@ class Helper:
             max_ram = max(
                 max(resources["ramMin"] or [0]), max(resources["ramMax"] or [0])
             )
+            logger.info(f"max ram: {max_ram}Mi")
             return f"{max_ram}Mi"
 
     def get_pod_env_vars(self):
@@ -245,10 +258,11 @@ class Helper:
             return content
 
     def get_tool_logs(self):
+        """return the tool logs flag, if true, the tool logs will be retrieved"""
         return self.tool_logs
 
     def handle_outputs(self, execution):
-
+        """handle the outputs of the execution"""
         output = None
 
         try:
@@ -259,20 +273,21 @@ class Helper:
         if self.stdout:
             try:
                 json.dump(output, open(self.stdout, "w"))
+                logger.info(f"Output retrieved and saved to {self.stdout}")
             except json.decoder.JSONDecodeError:
                 logger.error("Failed to retrieve the execution output")
 
         if self.stderr:
-
             log = execution.get_log()
             with open(self.stderr, "w") as f:
                 f.write(log)
+            logger.info(f"Log retrieved and saved to {self.stderr}")
 
         if self.usage_report:
             usage_report = execution.get_usage_report()
             try:
-                logger.debug(type(usage_report))
                 json.dump(usage_report, open(self.usage_report, "w"))
+                logger.info(f"Usage report retrieved and saved to {self.usage_report}")
             except json.decoder.JSONDecodeError:
                 logger.error("Failed to retrieve the usage report")
 
@@ -322,6 +337,7 @@ class Helper:
             return resource_requirement[0]
 
     def eval_resources(self):
+        """Evaluates the resource requirements of the cwl file"""
         cwl = load_document_by_yaml(self.get_cwl(), "io://")
 
         def get_object_by_id(cwl, id):
@@ -598,7 +614,7 @@ def main(ctx, **kwargs):
         logger.info("clean-up kubernetes resources")
         session.dispose()
 
-    print(output)
+    print(json.dumps(output, indent=2))
     return exit_value
 
 

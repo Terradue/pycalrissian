@@ -1,6 +1,7 @@
 import unittest
 
 from click.testing import CliRunner
+
 from pycalrissian import app
 
 

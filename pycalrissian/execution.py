@@ -26,6 +26,7 @@ class CalrissianExecution:
         self.runtime_context = runtime_context
         self.namespaced_job = None
         self.killed = False
+        self.namespaced_job_name = None
 
     def submit(self):
         """Submits the job to the cluster"""
@@ -80,7 +81,7 @@ class CalrissianExecution:
         """Returns the job output"""
         if self.is_succeeded:
             filename = self.get_file_from_volume(["output.json"])[0]
-            with open(filename, "r") as staged_file:
+            with open(filename, encoding="utf-8", mode="r") as staged_file:
                 return json.load(staged_file)
 
     def get_usage_report(self) -> Dict:
@@ -88,12 +89,13 @@ class CalrissianExecution:
         if self.is_complete:
             try:
                 filename = self.get_file_from_volume(["report.json"])[0]
-                with open(filename, "r") as staged_file:
+                with open(filename, encoding="utf-8", mode="r") as staged_file:
                     return json.load(staged_file)
             except json.decoder.JSONDecodeError:
                 return {}
 
     def get_file_from_volume(self, filenames):
+        """stages the files from k8s volume"""
         volume = {
             "name": self.job.volume_calrissian_wdir,
             "persistentVolumeClaim": {
@@ -142,6 +144,7 @@ class CalrissianExecution:
             ]
 
     def _get_container_log(self, container):
+        """Returns the container log"""
         try:
             pod_label_selector = f"job-name={self.job.job_name}"
             pods_list = self.runtime_context.core_v1_api.list_namespaced_pod(
@@ -198,6 +201,7 @@ class CalrissianExecution:
     def monitor(
         self, interval: int = 5, grace_period=120, wall_time: Optional[int] = None
     ) -> None:
+        """Monitors the job execution and waits for it to complete"""
         if self.is_active():
             iterations = 0
 
@@ -240,7 +244,7 @@ class CalrissianExecution:
 
     def get_waiting_pods(self) -> List[V1Pod]:
         pods_waiting = []
-
+        """Returns the pods in waiting status with reason ImagePullBackOff"""
         response = self.runtime_context.core_v1_api.list_namespaced_pod(
             self.runtime_context.namespace
         )
