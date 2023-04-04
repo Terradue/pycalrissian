@@ -95,17 +95,17 @@ $graph:
       ramMax: 2028
 ```
 
-**--max-cores**
+### --max-cores
 
 Maximum number of CPU cores to use. Clarissian will allocate tool pods within this number of cores limit putting the remaining pods in a queue.
 If not set, this value is derived from the CWL `ResourceRequirement`
 
-**--volume-size**
+### --volume-size
 
 Size of the ReadWriteMay volume for CWL temporary and output files.
 If not set, this value is derived from the CWL `ResourceRequirement`
 
-**--pod-labels**
+### --pod-labels
 
 A YAML file of labels to add to the pods spawned by `calrissian`.
 
@@ -122,7 +122,7 @@ pod-label-1: value_1
 pod-label-2: value_2
 ```
 
-**--pod-env-vars**
+### --pod-env-vars
 
 A YAML file of environment variables to add to the pods spawned by `calrissian`.
 
@@ -139,7 +139,7 @@ env_var_1: "value_1"
 env_var_2: "value_2"
 ```
 
-**--pod-node-selector**
+### --pod-node-selector
 
 YAML file of node selectors to select the nodes where the pods will be scheduled by calrissian.
 
@@ -155,55 +155,55 @@ Where the file `pod-node-selector` contains:
 "k8s.scaleway.com/pool-name": default
 ```
 
-**--pod-serviceaccount**
+### --pod-serviceaccount
 
 Not implemented. Service Account to use for pods management.
 
-**--security-context**
+### --security-context
 
 A YAML file with the security context to use for running the pods.
 
-**--usage-report**
+### --usage-report
 
 Output JSON file name to record resource usage.
 
-**--stdout**
+### --stdout
 
 Output file name to tee standard output (CWL output object)
 
-**--stderr**
+### --stderr
 
 Output file name to tee standard error to (calrissian job stderr).
 
-**--tool-logs**
+### --tool-logs
 
 If set, the tool logs are retrieved as local files named after the spawned pod name.
 
-**--keep-resources**
+### --keep-resources
 
 If set, the kubernetes resources are not deleted. This is useful for debugging purposes.
 
-**--debug**
+### --debug
 
 If set, the standard error (calrissian job stderr) contains the debug information.
 
-**--no-read-only**
+### --no-read-only
 
 If set, does not set the calrissian spawned pods root directory as read-only.
 
-**--storage-class** [required]
+### --storage-class [required]
 
 ReadWriteMany storage class to use for the calrissina job volume.
 
-**--secret-config** [required]
+### --secret-config [required]
 
 Image pull secrets file (e.g. ~/.docker/config.json) including the container repositories to pull the container images from.
 
-**--monitor-interval**
+### --monitor-interval
 
 Job execution monitoring interval in seconds. Defaults to 15 seconds.
 
-**--namespace-labels**
+### --namespace-labels
 
 A YAML file with the namespace labels.
 
@@ -220,7 +220,7 @@ ns_label_1: value_1
 ns_label_2: value_2
 ```
 
-**--namespace-annotations**
+### --namespace-annotations
 
 A YAML file with the namespace annotations.
 
@@ -237,7 +237,7 @@ ns_annotation_1: value_1
 ns_annotation_2: value_2
 ```
 
-**--namespace-quota**
+### --namespace-quota
 
 A YAML file with the namespace resource quota.
 
@@ -254,7 +254,7 @@ requests.cpu: 32000m
 requests.memory: 48G
 ```
 
-**--pod-env-vars**
+### --pod-env-vars
 
 A YAML file with environment variables for the pods spwaned by `calrissian`
 
