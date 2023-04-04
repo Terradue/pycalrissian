@@ -468,20 +468,26 @@ class Helper:
     "--max-ram",
     "max_ram",
     help="Maximum amount of RAM to use, e.g 1048576, 512Mi or 2G."
-    " Follows k8s resource conventions",
+    " Follows k8s resource conventions. If not set, the value is "
+    "taken from the CWL resource requirements.",
     required=False,
+    envvar="MAX_RAM",
 )
 @click.option(
     "--max-cores",
     "max_cores",
-    help="Maximum number of CPU cores to use",
+    help="Maximum number of CPU cores to use. If not set, the value is "
+    "taken from the CWL resource requirements.",
     required=False,
+    envvar="MAX_CORES",
 )
 @click.option(
     "--volume-size",
     "volume_size",
-    help="Size of the RWX volume for CWL temporary and output files",
+    help="Size of the RWX volume for CWL temporary and output files. "
+    "If not set, the value is taken from the CWL resource requirements.",
     required=False,
+    envvar="VOLUME_SIZE",
 )
 @click.option(
     "--pod-labels",
@@ -514,8 +520,9 @@ class Helper:
 @click.option(
     "--security-context",
     "security_context",
-    help="Security context to use fror running the pods",
+    help="Security context to use for running the pods",
     required=False,
+    type=click.Path(exists=True),
 )
 @click.option(
     "--usage-report",
@@ -545,21 +552,21 @@ class Helper:
 @click.option(
     "--keep-resources",
     "keep_resources",
-    help="Keep kubernetes resources. Defaults to False",
+    help="If set, the kubernetes resources are not deleted.",
     is_flag=True,
     required=False,
 )
 @click.option(
     "--debug",
     "debug",
-    help="Sets the debug mode",
+    help="If set, the logs contain the debug information",
     is_flag=True,
     required=False,
 )
 @click.option(
     "--no-read-only",
     "no_read_only",
-    help="Do not set root directory in the pod as read-only",
+    help="If set, does not set root directory in the pod as read-only",
     is_flag=True,
     required=False,
 )
@@ -567,21 +574,22 @@ class Helper:
     "--storage-class",
     "storage_class",
     help="ReadWriteMany storage class to use for the job",
-    required=False,
+    required=True,
 )
 @click.option(
     "--secret-config",
     "secret_config",
-    help="Image pull secrets file",
+    help="Image pull secrets file (e.g. ~/.docker/config.json)",
     required=True,
 )
 @click.option(
     "--monitor-interval",
     "monitor_interval",
-    help="Job execution monitoring interval in seconds",
+    help="Job execution monitoring interval in seconds.",
     required=False,
     default=15,
     type=int,
+    show_default=True,
 )
 @click.option(
     "--namespace-labels",
@@ -607,10 +615,11 @@ class Helper:
 @click.option(
     "--copy-results",
     "copy_results",
-    help="Copy results to the current directory (experimental)",
+    help="If set, copies the results to the current directory (experimental)",
     is_flag=True,
     required=False,
     default=False,
+    show_default=True,
 )
 @click.argument("cwl", nargs=1)
 @click.argument("params", required=False, nargs=-1)
