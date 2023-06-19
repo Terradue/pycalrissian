@@ -4,9 +4,12 @@ from pod and into the pod. Support for copying the entire directory is
 yet to be added
 """
 import os
+import subprocess
+import sys
 import tarfile
 import time
 import uuid
+from pathlib import Path
 from tempfile import TemporaryFile
 from typing import Dict
 
@@ -67,7 +70,10 @@ class HelperPod:
                 self.pod_name, self.context.namespace
             )
         except ApiException as e:
-            print(f"Exception when calling CoreV1Api->delete_namespaced_pod: {e}\n")
+            print(
+                f"Exception when calling CoreV1Api->delete_namespaced_pod: {e}\n",
+                file=sys.stderr,
+            )
 
     def copy_to_volume(self, src_path, dest_path):
         """
@@ -113,7 +119,7 @@ class HelperPod:
                         break
                 api_response.close()
         except ApiException as e:
-            print("Exception when copying file to the pod%s \n" % e)
+            print("Exception when copying file to the pod%s \n" % e, file=sys.stderr)
 
     def copy_from_volume(self, src_path, dest_path):
         """
@@ -125,40 +131,57 @@ class HelperPod:
         :return:
         """
 
-        exec_command = ["tar", "cf", "-", src_path]
+        try:
+            exec_command = ["tar", "cf", "-", src_path]
 
-        with TemporaryFile() as tar_buffer:
-            resp = stream(
-                self.context.core_v1_api.connect_get_namespaced_pod_exec,
-                self.pod_name,
-                self.context.namespace,
-                command=exec_command,
-                stderr=True,
-                stdin=True,
-                stdout=True,
-                tty=False,
-                _preload_content=False,
-            )
+            with TemporaryFile() as tar_buffer:
+                resp = stream(
+                    self.context.core_v1_api.connect_get_namespaced_pod_exec,
+                    self.pod_name,
+                    self.context.namespace,
+                    command=exec_command,
+                    stderr=True,
+                    stdin=True,
+                    stdout=True,
+                    tty=False,
+                    _preload_content=False,
+                )
 
-            while resp.is_open():
-                resp.update(timeout=1)
-                if resp.peek_stdout():
-                    out = resp.read_stdout()
-                    # print("STDOUT: %s" % len(out))
-                    tar_buffer.write(out.encode("utf-8"))
-                if resp.peek_stderr():
-                    print("STDERR: %s" % resp.read_stderr())
-            resp.close()
+                while resp.is_open():
+                    resp.update(timeout=1)
+                    if resp.peek_stdout():
+                        out = resp.read_stdout()
+                        # print("STDOUT: %s" % len(out))
+                        tar_buffer.write(out.encode("utf-8"))
+                    if resp.peek_stderr():
+                        print("STDERR: %s" % resp.read_stderr())
+                resp.close()
 
-            tar_buffer.flush()
-            tar_buffer.seek(0)
+                tar_buffer.flush()
+                tar_buffer.seek(0)
 
-            with tarfile.open(fileobj=tar_buffer, mode="r:") as tar:
-                for member in tar.getmembers():
-                    if member.isdir():
-                        continue
-                    fname = member.name.rsplit("/", 1)[1]
-                    tar.makefile(member, dest_path + "/" + fname)
+                with tarfile.open(fileobj=tar_buffer, mode="r:") as tar:
+                    for member in tar.getmembers():
+                        if member.isdir():
+                            continue
+                        fname = member.name.rsplit("/", 1)[1]
+                        tar.makefile(member, dest_path + "/" + fname)
+        except ApiException as e:
+            if e.status != 404:
+                # kubernetes.stream does not support connection to cluster via proxy
+                # we are going to try to copy files using kubectl
+                filename = Path(src_path).name
+                dest = os.path.join(dest_path, filename)
+                exec_command = [
+                    "kubectl",
+                    "cp",
+                    f"{self.context.namespace}/{self.pod_name}:{src_path}",
+                    dest,
+                ]
+                result = subprocess.run(
+                    exec_command, capture_output=True, text=True
+                ).stdout.strip("\n")
+                print(result, file=sys.stderr)
 
 
 def copy_to_volume(
@@ -194,7 +217,7 @@ def copy_from_volume(
 
     try:
         for source_path in source_paths:
-            print(f"copy {source_path} to {destination_path}")
+            print(f"copy {source_path} to {destination_path}", file=sys.stderr)
             helper_pod.copy_from_volume(
                 src_path=source_path,
                 dest_path=destination_path,

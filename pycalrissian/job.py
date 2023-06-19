@@ -280,7 +280,7 @@ class CalrissianJob:
             env=env,
             lifecycle=V1Lifecycle(
                 pre_stop=V1LifecycleHandler(
-                    _exec=V1ExecAction(command=["/bin/sh", "-c", "sleep 90"])
+                    _exec=V1ExecAction(command=["/bin/sh", "-c", "sleep 30"])
                 )
             ),
             resources=V1ResourceRequirements(
