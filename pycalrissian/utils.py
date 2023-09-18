@@ -179,7 +179,7 @@ class HelperPod:
                     dest,
                 ]
                 result = subprocess.run(
-                    exec_command, capture_output=True, text=True
+                    exec_command, capture_output=True, text=True, shell=True
                 ).stdout.strip("\n")
                 print(result, file=sys.stderr)
 
