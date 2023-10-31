@@ -155,6 +155,8 @@ class HelperPod:
         :param dest_path:
             The local destination path where the file or directory should be copied to.
         """
+        # Temporary fix
+        return self.copy_from_volume_using_kubectl(src_path, dest_path)
         try:
             exec_command = [
                 "tar",
