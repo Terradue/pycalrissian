@@ -155,8 +155,6 @@ class HelperPod:
         :param dest_path:
             The local destination path where the file or directory should be copied to.
         """
-        # Temporary fix
-        return self.copy_from_volume_using_kubectl(src_path, dest_path)
         try:
             exec_command = [
                 "tar",
@@ -305,6 +303,9 @@ def copy_from_volume(
     )
 
     try:
+        oldOutFd = os.dup(sys.stdout.fileno())
+        oldOut = sys.stdout
+        os.dup2(sys.stderr.fileno(),1)
         for source_path in source_paths:
             print(
                 f"copy {source_path} to {destination_path}",
@@ -315,4 +316,7 @@ def copy_from_volume(
                 dest_path=destination_path,
             )
     finally:
+        sys.stdout.flush()
+        os.dup2(oldOutFd, oldOut.fileno())
+        sys.stdout = oldOut
         helper_pod.dismiss()
