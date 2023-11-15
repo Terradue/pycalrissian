@@ -303,9 +303,9 @@ def copy_from_volume(
     )
 
     try:
-        oldOutFd = os.dup(sys.stdout.fileno())
-        oldOut = sys.stdout
-        os.dup2(sys.stderr.fileno(),1)
+        old_out_fd = os.dup(sys.stdout.fileno())
+        old_out = sys.stdout
+        os.dup2(sys.stderr.fileno(), 1)
         for source_path in source_paths:
             print(
                 f"copy {source_path} to {destination_path}",
@@ -317,6 +317,6 @@ def copy_from_volume(
             )
     finally:
         sys.stdout.flush()
-        os.dup2(oldOutFd, oldOut.fileno())
-        sys.stdout = oldOut
+        os.dup2(old_out_fd, old_out.fileno())
+        sys.stdout = old_out
         helper_pod.dismiss()
