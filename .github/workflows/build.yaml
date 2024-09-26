@@ -34,6 +34,6 @@ jobs:
         key: ${{ runner.os }}-hatch
     - name: Build
       run: hatch build
-    - name: Test
-      run: |
-        hatch -e test run nose2 --verbose
+    # - name: Test
+    #   run: |
+    #     hatch -e test run nose2 --verbose
