@@ -332,7 +332,7 @@ def copy_to_volume(
     try:
         for source_path in source_paths:
             print(f"copy {source_path} to {destination_path}")
-            '''
+            """
             helper_pod.copy_to_volume(
                 src_path=source_path,
                 dest_path=os.path.join(
@@ -340,10 +340,9 @@ def copy_to_volume(
                     os.path.basename(source_path),
                 ),
             )
-            '''
+            """
             helper_pod.copy_to_volume_using_kubectl(
-                src_path=source_path,
-                dest_path=destination_path
+                src_path=source_path, dest_path=destination_path
             )
     finally:
         helper_pod.dismiss()
