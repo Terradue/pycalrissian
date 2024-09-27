@@ -29,8 +29,24 @@ jobs:
         pip install hatch
     - name: Build package
       run: hatch build
-    # - name: Test package
-    #   run: hatch -e test run nose2 --verbose
+     # Install Minikube
+    - name: Install Minikube
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y apt-transport-https
+        sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        sudo install minikube-linux-amd64 /usr/local/bin/minikube
+    # Start Minikube
+    - name: Start Minikube
+      run: |
+        minikube start --driver=docker
+    # Set and export KUBECONFIG path
+    - name: Set KUBECONFIG path
+      run: |
+        cp ~/.kube/config ~/.kube/kubeconfig-t2-dev.yaml
+        echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+    - name: Test package
+      run: hatch -e test run nose2 --verbose
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
