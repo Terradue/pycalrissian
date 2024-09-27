@@ -43,6 +43,7 @@ jobs:
     # Set and export KUBECONFIG path
     - name: Set KUBECONFIG path
       run: |
+        cp ~/.kube/config ~/.kube/kubeconfig-t2-dev.yaml
         echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
     - name: Test package
       run: hatch -e test run nose2 --verbose
