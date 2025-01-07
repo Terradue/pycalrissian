@@ -80,7 +80,7 @@ class TestCalrissianJob(unittest.TestCase):
 
     def test_calrissian_image(self):
 
-        os.environ["CALRISSIAN_IMAGE"] = "someimage:latest"
+        os.environ["CALRISSIAN_IMAGE"] = "ghcr.io/terradue/calrissian-session/calrissian-session:latest"
 
         document = "tests/simple.cwl"
 
