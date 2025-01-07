@@ -39,7 +39,7 @@ jobs:
     # Start Minikube
     - name: Start Minikube
       run: |
-        minikube start --driver=docker
+        minikube start --driver=docker --memory=6500
     # Set and export KUBECONFIG path
     - name: Set KUBECONFIG path
       run: |
