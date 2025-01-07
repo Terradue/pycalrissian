@@ -75,7 +75,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5)
+        execution.monitor(interval=5, wall_time=360)
 
         print(f"complete {execution.is_complete()}")
         print(f"succeeded {execution.is_succeeded()}")
@@ -110,7 +110,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5, grace_period=60)
+        execution.monitor(interval=5, grace_period=60, wall_time=120)
 
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
@@ -141,7 +141,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5, grace_period=60)
+        execution.monitor(interval=5, grace_period=60, wall_time=120)
 
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
@@ -197,6 +197,6 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=15, grace_period=30, wall_time=180)
+        execution.monitor(interval=15, grace_period=30, wall_time=120)
 
         self.assertTrue(execution.is_succeeded())

@@ -66,9 +66,9 @@ class TestCalrissianJob(unittest.TestCase):
             params=params,
             runtime_context=self.session,
             pod_env_vars=pod_env_vars,
-            pod_node_selector={
-                "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
-            },
+            # pod_node_selector={
+            #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
+            # },
             debug=True,
             max_cores=2,
             max_ram="4G",

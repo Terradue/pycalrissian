@@ -83,7 +83,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5)
+        execution.monitor(interval=5, wall_time=120)
 
         log = execution.get_log()
         print(log)
