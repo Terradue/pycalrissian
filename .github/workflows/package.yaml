@@ -5,7 +5,9 @@ on:
     branches: [ "main" ]
   release:
     types: [published]
-
+  pull_request:
+    branches: [develop, main]
+    
 permissions:
   contents: read
 
