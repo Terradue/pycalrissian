@@ -53,7 +53,7 @@ class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def tearDown(cls):
         cls.session.dispose()
-
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job(self):
 
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:

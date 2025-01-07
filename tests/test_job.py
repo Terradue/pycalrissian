@@ -55,7 +55,8 @@ class TestCalrissianJob(unittest.TestCase):
         # TODO check why this fails with namespace is being terminated
         document = "tests/simple.cwl"
         with open(document) as doc_handle:
-            cwl = yaml.main.round_trip_load(doc_handle, preserve_quotes=True)
+            yaml_obj = yaml.YAML()
+            cwl = yaml_obj.load(doc_handle)
 
         params = {"message": "hello world!"}
 
@@ -80,12 +81,13 @@ class TestCalrissianJob(unittest.TestCase):
 
     def test_calrissian_image(self):
 
-        os.environ["CALRISSIAN_IMAGE"] = "ghcr.io/terradue/calrissian-session/calrissian-session:latest"
+        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:latest"
 
         document = "tests/simple.cwl"
 
         with open(document) as doc_handle:
-            cwl = yaml.main.round_trip_load(doc_handle, preserve_quotes=True)
+            yaml_obj = yaml.YAML()
+            cwl = yaml_obj.load(doc_handle)
 
         params = {"message": "hello world!"}
 

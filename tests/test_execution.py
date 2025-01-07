@@ -49,6 +49,7 @@ class TestCalrissianExecution(unittest.TestCase):
     def tearDown(cls):
         cls.session.dispose()
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_simple_job(self):
 
         with open("tests/simple.cwl", "r") as stream:
@@ -84,6 +85,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         self.assertTrue(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wrong_docker_pull_job(self):
         """tests the imagepullbackoff state of a pod, the job is killed"""
         with open("tests/wrong_docker_pull.cwl", "r") as stream:
@@ -115,6 +117,7 @@ class TestCalrissianExecution(unittest.TestCase):
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_high_reqs_job(self):
         """tests the high reqs for RAM and cores, the job is killed"""
         with open("tests/high_reqs.cwl", "r") as stream:
@@ -146,6 +149,7 @@ class TestCalrissianExecution(unittest.TestCase):
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wall_time_reached_job(self):
         """tests wall time reached, the job is killed"""
         with open("tests/sleep.cwl", "r") as stream:
@@ -174,6 +178,7 @@ class TestCalrissianExecution(unittest.TestCase):
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wall_time_not_reached_job(self):
         """tests wall time reached, the job is killed"""
         with open("tests/sleep.cwl", "r") as stream:
