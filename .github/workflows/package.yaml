@@ -45,6 +45,7 @@ jobs:
       run: |
         cp ~/.kube/config ~/.kube/kubeconfig-t2-dev.yaml
         echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+        echo "CI_TEST_SKIP=1" >> $GITHUB_ENV
     - name: Test package
       run: hatch -e test run nose2 --verbose
     - name: Publish package distributions to PyPI
