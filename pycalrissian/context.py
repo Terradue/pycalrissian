@@ -54,6 +54,7 @@ class CalrissianContext:
 
         self.image_pull_secrets = image_pull_secrets
         self.secret_name = "container-rg"
+        self.secret_names = []
         self.calrissian_wdir = "calrissian-wdir"
 
         self.labels = labels
@@ -376,7 +377,7 @@ class CalrissianContext:
 
         role_ref = client.V1RoleRef(api_group="", kind="Role", name=role)
 
-        subject = client.models.V1Subject(
+        subject = client.models.RbacV1Subject(
             api_group="",
             kind="ServiceAccount",
             name="default",
@@ -543,45 +544,88 @@ class CalrissianContext:
         name,
     ):
 
-        if self.is_image_pull_secret_created(name=name):
+        if "auths" in self.image_pull_secrets:
+            if self.is_image_pull_secret_created(name=name):
 
-            return self.core_v1_api.read_namespaced_secret(
-                namespace=self.namespace, name=name
-            )  # noqa: E501
+                return self.core_v1_api.read_namespaced_secret(
+                    namespace=self.namespace, name=name
+                )  # noqa: E501
 
-        metadata = {"name": name, "namespace": self.namespace}
+            metadata = {"name": name, "namespace": self.namespace}
 
-        data = {
-            ".dockerconfigjson": base64.b64encode(
-                json.dumps(self.image_pull_secrets).encode()
-            ).decode()
-        }
-
-        secret = client.V1Secret(
-            api_version="v1",
-            data=data,
-            kind="Secret",
-            metadata=metadata,
-            type="kubernetes.io/dockerconfigjson",
-        )
-
-        try:
-            response = self.core_v1_api.create_namespaced_secret(
-                namespace=self.namespace,
-                body=secret,
-                pretty=True,
+            data = {
+                ".dockerconfigjson": base64.b64encode(
+                    json.dumps(self.image_pull_secrets).encode()
+                ).decode()
+            }
+        
+            secret = client.V1Secret(
+                api_version="v1",
+                data=data,
+                kind="Secret",
+                metadata=metadata,
+                type="kubernetes.io/dockerconfigjson",
             )
 
-            if not self.retry(self.is_image_pull_secret_created, name=name):
-                raise ApiException(http_resp=response)
-            logger.info(f"image pull secret {name} created")
-            return response
+            try:
+                response = self.core_v1_api.create_namespaced_secret(
+                    namespace=self.namespace,
+                    body=secret,
+                    pretty=True,
+                )
 
-        except ApiException as e:
-            logger.info(
-                f"image pull secret {name} not created " "in the time interval assigned"
-            )
-            raise e
+                if not self.retry(self.is_image_pull_secret_created, name=name):
+                    raise ApiException(http_resp=response)
+                logger.info(f"image pull secret {name} created")
+                return response
+
+            except ApiException as e:
+                logger.info(
+                    f"image pull secret {name} not created " "in the time interval assigned"
+                )
+                raise e
+        else:
+            # if no auths in the image pull secrets, it should be an array
+            try:
+                for counter in range(len(self.image_pull_secrets)):
+                    self.secret_names.append(self.image_pull_secrets[counter])
+                    response = self.core_v1_api.read_namespaced_secret(
+                        namespace=os.environ["ORIGIN_NAMESPACE"], name=self.image_pull_secrets[counter]
+                    )  # noqa: E501
+                    if self.is_image_pull_secret_created(name=self.image_pull_secrets[counter]):
+                        return self.core_v1_api.read_namespaced_secret(
+                            namespace=self.namespace, name=self.image_pull_secrets[counter]
+                        )  # noqa: E501
+
+                    metadata = {"name": self.image_pull_secrets[counter], "namespace": self.namespace}
+                    secret = client.V1Secret(
+                        api_version="v1",
+                        data=response.data,
+                        kind="Secret",
+                        metadata=metadata,
+                        type="kubernetes.io/dockerconfigjson",
+                    )
+                    try:
+                        response = self.core_v1_api.create_namespaced_secret(
+                            namespace=self.namespace,
+                            body=secret,
+                            pretty=True,
+                        )
+
+                        if not self.retry(self.is_image_pull_secret_created, name=self.image_pull_secrets[counter]):
+                            raise ApiException(http_resp=response)
+                        logger.info(f"image pull secret {self.image_pull_secrets[counter]} created")
+                        return response
+
+                    except ApiException as e:
+                        logger.info(
+                            f"image pull secret {self.image_pull_secrets[counter]} not created " "in the time interval assigned"
+                        )
+                        raise e
+
+            except Exception as e:
+                logger.error(f"Exception when creating image pull secret: {e}\n")
+
 
     def patch_service_account(self):
         # adds a secret to the namespace default service account
@@ -596,10 +640,17 @@ class CalrissianContext:
         if service_account_body.image_pull_secrets is None:
             service_account_body.image_pull_secrets = []
 
-        service_account_body.secrets.append({"name": self.secret_name})
-        service_account_body.image_pull_secrets.append(
-            {"name": self.secret_name}
-        )  # noqa: E501
+        if len(self.secret_names)==0:
+            service_account_body.secrets.append({"name": self.secret_name})
+            service_account_body.image_pull_secrets.append(
+                {"name": self.secret_name}
+            )  # noqa: E501
+        else:
+            for counter in range(len(self.secret_names)):
+                service_account_body.secrets.append({"name": self.secret_names[counter]})
+                service_account_body.image_pull_secrets.append(
+                    {"name": self.secret_names[counter]}
+                )  # noqa: E501
 
         try:
             self.core_v1_api.patch_namespaced_service_account(
