@@ -8,7 +8,7 @@ from ruamel import yaml
 from pycalrissian.context import CalrissianContext
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianJob(unittest.TestCase):
@@ -51,11 +51,13 @@ class TestCalrissianJob(unittest.TestCase):
     def tearDown(cls):
         cls.session.dispose()
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job(self):
         # TODO check why this fails with namespace is being terminated
         document = "tests/simple.cwl"
         with open(document) as doc_handle:
-            cwl = yaml.main.round_trip_load(doc_handle, preserve_quotes=True)
+            yaml_obj = yaml.YAML()
+            cwl = yaml_obj.load(doc_handle)
 
         params = {"message": "hello world!"}
 
@@ -66,9 +68,9 @@ class TestCalrissianJob(unittest.TestCase):
             params=params,
             runtime_context=self.session,
             pod_env_vars=pod_env_vars,
-            pod_node_selector={
-                "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
-            },
+            # pod_node_selector={
+            #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
+            # },
             debug=True,
             max_cores=2,
             max_ram="4G",
@@ -80,12 +82,13 @@ class TestCalrissianJob(unittest.TestCase):
 
     def test_calrissian_image(self):
 
-        os.environ["CALRISSIAN_IMAGE"] = "someimage:latest"
+        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:latest"
 
         document = "tests/simple.cwl"
 
         with open(document) as doc_handle:
-            cwl = yaml.main.round_trip_load(doc_handle, preserve_quotes=True)
+            yaml_obj = yaml.YAML()
+            cwl = yaml_obj.load(doc_handle)
 
         params = {"message": "hello world!"}
 

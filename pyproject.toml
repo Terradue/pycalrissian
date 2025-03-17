@@ -1,0 +1,86 @@
+[build-system]
+requires = ["hatchling","setuptools", "wheel", "build"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pycalrissian"
+dynamic = ["version"]
+description = "pycalrissian"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["pycalrissian", "kubernetes"]
+license = "EUPL-1.0"
+authors = [
+    { name = "Terradue", email = "fabrice.brito@terradue.com" },
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "loguru",
+    "typing-extensions==4.8.0",
+    "kubernetes==28.1.0",
+    "cwltool==3.1.20240708091337",
+    "setuptools==70.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/Terradue/pycalrissian"
+
+[tool.hatch.version]
+path = "pycalrissian/__about__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "pycalrissian/*",
+    "docs/*",
+    "test/*"
+]
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "loguru",
+  "typing",
+  "kubernetes==28.1.0",
+]
+
+[tool.coverage.run]
+source_pkgs = ["pycalrissian", "tests"]
+branch = true
+parallel = true
+omit = [
+  "pycalrissian/__about__.py",
+]
+
+[tool.coverage.paths]
+pycalrissian = ["pycalrissian"]
+tests = ["tests"]
+
+[tool.hatch.envs.default]
+skip-install = false
+dependencies = [
+    "nose2",
+    "coverage",
+    "loguru",
+    "typing-extensions==4.8.0",
+    "kubernetes==28.1.0",
+    "cwltool==3.1.20240708091337",
+    "setuptools==70.0.0"
+]
+
+## [project.scripts]
+## pycalrissian = "pycalrissian/__init__"
+
+[tool.hatch.envs.test.scripts]
+test = "hatch run nose2"
+testv = "hatch run nose2 --verbose"
+cov = ["coverage run --source=pycalrissian -m nose2", "coverage report"]
