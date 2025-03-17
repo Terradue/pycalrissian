@@ -615,8 +615,6 @@ class CalrissianContext:
                     namespace=os.environ["ORIGIN_NAMESPACE"],
                     name=secrets_list[counter]["name"],
                 )  # noqa: E501
-                logger.info(f"secret {secrets_list[counter]['name']} fetched")
-                logger.info(f"Response {response.data}")
                 self._create_image_pull_secret(
                     secrets_list[counter]["name"], response.data
                 )
