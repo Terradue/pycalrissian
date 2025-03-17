@@ -54,6 +54,7 @@ class CalrissianContext:
 
         self.image_pull_secrets = image_pull_secrets
         self.secret_name = "container-rg"
+        self.secret_names = []
         self.calrissian_wdir = "calrissian-wdir"
 
         self.labels = labels
@@ -115,8 +116,21 @@ class CalrissianContext:
         assert isinstance(response, V1PersistentVolumeClaim)
 
         if self.image_pull_secrets:
-            logger.info(f"create secret {self.secret_name}")
-            self.create_image_pull_secret(self.secret_name)
+            if (
+                "imagePullSecrets" in self.image_pull_secrets
+                and self.image_pull_secrets["imagePullSecrets"] is not None
+                and len(self.image_pull_secrets["imagePullSecrets"].keys()) > 0
+            ):
+                logger.info(f"create secret {self.secret_name}")
+                self.create_image_pull_secret(self.secret_name)
+            if (
+                "additionalImagePullSecrets" in self.image_pull_secrets
+                and self.image_pull_secrets["additionalImagePullSecrets"] is not None
+            ):
+                logger.info(f"create secrets from existing ones")
+                self.create_additional_image_pull_secret(
+                    self.image_pull_secrets["additionalImagePullSecrets"]
+                )
 
             logger.info("patch service account")
             self.patch_service_account()
@@ -203,28 +217,28 @@ class CalrissianContext:
         read_methods = {}
 
         read_methods["read_namespace"] = self.core_v1_api.read_namespace
-        read_methods[
-            "read_namespaced_role"
-        ] = self.rbac_authorization_v1_api.read_namespaced_role  # noqa: E501
-        read_methods[
-            "read_namespaced_role_binding"
-        ] = self.rbac_authorization_v1_api.read_namespaced_role_binding  # noqa: E501
+        read_methods["read_namespaced_role"] = (
+            self.rbac_authorization_v1_api.read_namespaced_role
+        )  # noqa: E501
+        read_methods["read_namespaced_role_binding"] = (
+            self.rbac_authorization_v1_api.read_namespaced_role_binding
+        )  # noqa: E501
 
-        read_methods[
-            "read_namespaced_config_map"
-        ] = self.core_v1_api.read_namespaced_config_map  # noqa: E501
+        read_methods["read_namespaced_config_map"] = (
+            self.core_v1_api.read_namespaced_config_map
+        )  # noqa: E501
 
-        read_methods[
-            "read_namespaced_persistent_volume_claim"
-        ] = self.core_v1_api.read_namespaced_persistent_volume_claim  # noqa: E501
+        read_methods["read_namespaced_persistent_volume_claim"] = (
+            self.core_v1_api.read_namespaced_persistent_volume_claim
+        )  # noqa: E501
 
-        read_methods[
-            "read_namespaced_secret"
-        ] = self.core_v1_api.read_namespaced_secret  # noqa: E501
+        read_methods["read_namespaced_secret"] = (
+            self.core_v1_api.read_namespaced_secret
+        )  # noqa: E501
 
-        read_methods[
-            "read_namespaced_resource_quota"
-        ] = self.core_v1_api.read_namespaced_resource_quota  # noqa: E501
+        read_methods["read_namespaced_resource_quota"] = (
+            self.core_v1_api.read_namespaced_resource_quota
+        )  # noqa: E501
 
         try:
             if read_method in [
@@ -376,7 +390,7 @@ class CalrissianContext:
 
         role_ref = client.V1RoleRef(api_group="", kind="Role", name=role)
 
-        subject = client.models.V1Subject(
+        subject = client.models.RbacV1Subject(
             api_group="",
             kind="ServiceAccount",
             name="default",
@@ -538,10 +552,7 @@ class CalrissianContext:
             logger.info(f"config map {name} not created in the time interval assigned")
             raise e
 
-    def create_image_pull_secret(
-        self,
-        name,
-    ):
+    def _create_image_pull_secret(self, name, content):
 
         if self.is_image_pull_secret_created(name=name):
 
@@ -551,15 +562,9 @@ class CalrissianContext:
 
         metadata = {"name": name, "namespace": self.namespace}
 
-        data = {
-            ".dockerconfigjson": base64.b64encode(
-                json.dumps(self.image_pull_secrets).encode()
-            ).decode()
-        }
-
         secret = client.V1Secret(
             api_version="v1",
-            data=data,
+            data=content,
             kind="Secret",
             metadata=metadata,
             type="kubernetes.io/dockerconfigjson",
@@ -583,6 +588,40 @@ class CalrissianContext:
             )
             raise e
 
+    def create_image_pull_secret(
+        self,
+        name,
+    ):
+
+        data = {
+            ".dockerconfigjson": base64.b64encode(
+                json.dumps(self.image_pull_secrets["imagePullSecrets"]).encode()
+            ).decode()
+        }
+
+        self.secret_names.append(name)
+        return self._create_image_pull_secret(name, data)
+
+    def create_additional_image_pull_secret(
+        self,
+        secrets_list,
+    ):
+
+        try:
+            for counter in range(len(secrets_list)):
+                self.secret_names.append(secrets_list[counter]["name"])
+                # Fetch the pre-existing secret from the ORIGIN_NAMESPACE
+                response = self.core_v1_api.read_namespaced_secret(
+                    namespace=os.environ["ORIGIN_NAMESPACE"],
+                    name=secrets_list[counter]["name"],
+                )  # noqa: E501
+                self._create_image_pull_secret(
+                    secrets_list[counter]["name"], response.data
+                )
+
+        except Exception as e:
+            logger.error(f"Exception when creating image pull secret: {e}\n")
+
     def patch_service_account(self):
         # adds a secret to the namespace default service account
 
@@ -596,10 +635,11 @@ class CalrissianContext:
         if service_account_body.image_pull_secrets is None:
             service_account_body.image_pull_secrets = []
 
-        service_account_body.secrets.append({"name": self.secret_name})
-        service_account_body.image_pull_secrets.append(
-            {"name": self.secret_name}
-        )  # noqa: E501
+        for counter in range(len(self.secret_names)):
+            service_account_body.secrets.append({"name": self.secret_names[counter]})
+            service_account_body.image_pull_secrets.append(
+                {"name": self.secret_names[counter]}
+            )  # noqa: E501
 
         try:
             self.core_v1_api.patch_namespaced_service_account(
