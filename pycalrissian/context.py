@@ -555,16 +555,24 @@ class CalrissianContext:
     def _create_image_pull_secret(self, name, content):
 
         if self.is_image_pull_secret_created(name=name):
-
+            
             return self.core_v1_api.read_namespaced_secret(
                 namespace=self.namespace, name=name
             )  # noqa: E501
 
         metadata = {"name": name, "namespace": self.namespace}
-
+        
+        _secret: dict = {}
+        _secret['auths'] = self.image_pull_secrets['imagePullSecrets']
+        data = {
+            ".dockerconfigjson": base64.b64encode(
+                json.dumps(_secret).encode()
+            ).decode()
+        }
+        
         secret = client.V1Secret(
             api_version="v1",
-            data=content,
+            data=data,
             kind="Secret",
             metadata=metadata,
             type="kubernetes.io/dockerconfigjson",
