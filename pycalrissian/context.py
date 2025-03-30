@@ -390,12 +390,22 @@ class CalrissianContext:
 
         role_ref = client.V1RoleRef(api_group="", kind="Role", name=role)
 
-        subject = client.models.RbacV1Subject(
-            api_group="",
-            kind="ServiceAccount",
-            name="default",
-            namespace=self.namespace,
-        )
+        # Check the version of the client to determine the correct class to use
+        from packaging.version import Version
+        if Version(client.__version__) < Version("29.0.0"):
+            subject = client.models.V1Subject(
+                api_group="",
+                kind="ServiceAccount",
+                name="default",
+                namespace=self.namespace,
+            )
+        else:
+            subject = client.models.RbacV1Subject(
+                api_group="",
+                kind="ServiceAccount",
+                name="default",
+                namespace=self.namespace,
+            )
 
         body = client.V1RoleBinding(
             metadata=metadata, role_ref=role_ref, subjects=[subject]
