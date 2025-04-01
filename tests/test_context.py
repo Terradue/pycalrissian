@@ -211,7 +211,7 @@ class TestCalrissianContext(unittest.TestCase):
             namespace=self.namespace,
             storage_class="microk8s-hostpath",
             volume_size="1G",
-            image_pull_secrets=secret_config,
+            image_pull_secrets={"imagePullSecrets": secret_config},
         )
 
         if not session.is_namespace_created():
