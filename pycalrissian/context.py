@@ -10,6 +10,7 @@ from kubernetes.client import Configuration
 from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolumeClaim
 from kubernetes.client.rest import ApiException
 from loguru import logger
+from packaging.version import Version
 
 
 class CalrissianContext:
@@ -390,12 +391,21 @@ class CalrissianContext:
 
         role_ref = client.V1RoleRef(api_group="", kind="Role", name=role)
 
-        subject = client.models.RbacV1Subject(
-            api_group="",
-            kind="ServiceAccount",
-            name="default",
-            namespace=self.namespace,
-        )
+        # Check the version of the client to determine the correct class to use
+        if Version(client.__version__) < Version("29.0.0"):
+            subject = client.models.V1Subject(
+                api_group="",
+                kind="ServiceAccount",
+                name="default",
+                namespace=self.namespace,
+            )
+        else:
+            subject = client.models.RbacV1Subject(
+                api_group="",
+                kind="ServiceAccount",
+                name="default",
+                namespace=self.namespace,
+            )
 
         body = client.V1RoleBinding(
             metadata=metadata, role_ref=role_ref, subjects=[subject]
