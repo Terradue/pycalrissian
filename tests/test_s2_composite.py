@@ -8,7 +8,7 @@ from pycalrissian.context import CalrissianContext
 from pycalrissian.execution import CalrissianExecution
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianExecution(unittest.TestCase):
@@ -51,7 +51,8 @@ class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def tearDown(cls):
         cls.session.dispose()
-
+        
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_s2_composite_job(self):
 
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
@@ -73,9 +74,9 @@ class TestCalrissianExecution(unittest.TestCase):
             runtime_context=self.session,
             cwl_entry_point="dnbr",
             pod_env_vars=pod_env_vars,
-            pod_node_selector={
-                "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
-            },
+            # pod_node_selector={
+            #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
+            # },
             debug=False,
             max_cores=6,
             max_ram="16G",
@@ -88,7 +89,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5, grace_period=600)
+        execution.monitor(interval=5, grace_period=600, wall_time=360)
 
         print(execution.get_log())
 

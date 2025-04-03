@@ -8,7 +8,7 @@ from pycalrissian.context import CalrissianContext
 from pycalrissian.execution import CalrissianExecution
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianExecution(unittest.TestCase):
@@ -49,6 +49,7 @@ class TestCalrissianExecution(unittest.TestCase):
     def tearDown(cls):
         cls.session.dispose()
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_simple_job(self):
 
         with open("tests/simple.cwl", "r") as stream:
@@ -75,7 +76,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5)
+        execution.monitor(interval=5, wall_time=360)
 
         print(f"complete {execution.is_complete()}")
         print(f"succeeded {execution.is_succeeded()}")
@@ -84,6 +85,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         self.assertTrue(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wrong_docker_pull_job(self):
         """tests the imagepullbackoff state of a pod, the job is killed"""
         with open("tests/wrong_docker_pull.cwl", "r") as stream:
@@ -110,11 +112,12 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5, grace_period=60)
+        execution.monitor(interval=5, grace_period=60, wall_time=120)
 
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_high_reqs_job(self):
         """tests the high reqs for RAM and cores, the job is killed"""
         with open("tests/high_reqs.cwl", "r") as stream:
@@ -141,11 +144,12 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5, grace_period=60)
+        execution.monitor(interval=5, grace_period=60, wall_time=120)
 
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wall_time_reached_job(self):
         """tests wall time reached, the job is killed"""
         with open("tests/sleep.cwl", "r") as stream:
@@ -174,6 +178,7 @@ class TestCalrissianExecution(unittest.TestCase):
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wall_time_not_reached_job(self):
         """tests wall time reached, the job is killed"""
         with open("tests/sleep.cwl", "r") as stream:
@@ -197,6 +202,6 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=15, grace_period=30, wall_time=180)
+        execution.monitor(interval=15, grace_period=30, wall_time=120)
 
         self.assertTrue(execution.is_succeeded())

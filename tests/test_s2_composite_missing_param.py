@@ -8,7 +8,7 @@ from pycalrissian.context import CalrissianContext
 from pycalrissian.execution import CalrissianExecution
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianExecution(unittest.TestCase):
@@ -53,7 +53,7 @@ class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def tearDown(cls):
         cls.session.dispose()
-
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job(self):
 
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
@@ -83,7 +83,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         execution.submit()
 
-        execution.monitor(interval=5)
+        execution.monitor(interval=5, wall_time=120)
 
         log = execution.get_log()
         print(log)

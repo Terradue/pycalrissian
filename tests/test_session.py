@@ -4,7 +4,7 @@ import unittest
 
 from pycalrissian.context import CalrissianContext
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianExecution(unittest.TestCase):
