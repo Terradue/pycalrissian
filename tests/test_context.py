@@ -12,7 +12,7 @@ from kubernetes.client.models.v1_secret import V1Secret
 
 from pycalrissian.context import CalrissianContext
 
-os.environ["KUBECONFIG"] = "/home/mambauser/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianContext(unittest.TestCase):
@@ -211,7 +211,7 @@ class TestCalrissianContext(unittest.TestCase):
             namespace=self.namespace,
             storage_class="microk8s-hostpath",
             volume_size="1G",
-            image_pull_secrets=secret_config,
+            image_pull_secrets={"imagePullSecrets": secret_config},
         )
 
         if not session.is_namespace_created():

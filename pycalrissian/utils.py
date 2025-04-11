@@ -207,6 +207,60 @@ class HelperPod:
                 # we are going to try to copy files using kubectl
                 self.copy_from_volume_using_kubectl(src_path, dest_path)
 
+    def copy_to_volume_using_kubectl(
+        self,
+        src_path,
+        dest_path,
+        max_attempts=5,
+        retry_interval=5,
+    ):
+        """
+        Copy a file from a Kubernetes pod using `kubectl cp` command.
+
+        :param src_path:
+            The source path of the file inside the pod where the volume is mounted.
+        :param dest_path:
+            The destination path on the local filesystem where the file
+            should be copied.
+        :param max_attempts:
+            The maximum number of copy attempts in case of failure (default is 5).
+        :param retry_interval:
+            The time interval (in seconds) to wait before retrying a copy
+            operation (default is 5 seconds).
+        """
+        filename = Path(src_path).name
+        dest = os.path.join(dest_path, filename)
+        exec_command = [
+            "kubectl",
+            "cp",
+            src_path,
+            f"{self.context.namespace}/{self.pod_name}:{dest_path}",
+        ]
+
+        for attempt in range(max_attempts):
+            try:
+                subprocess.check_call(exec_command)
+                print(
+                    f"File {filename} copied successfully to {dest}.",
+                    file=sys.stderr,
+                )
+                break  # Exit loop on success
+            except subprocess.CalledProcessError as e:
+                print(
+                    f"Error copying file (attempt {attempt + 1}/{max_attempts}): {e}",
+                    file=sys.stderr,
+                )
+
+                if attempt < max_attempts - 1:
+                    print(f"Retrying in {retry_interval} seconds...")
+                    time.sleep(retry_interval)
+                else:
+                    print(
+                        "Max retry attempts reached. Copy operation failed.",
+                        file=sys.stderr,
+                    )
+                    break
+
     def copy_from_volume_using_kubectl(
         self,
         src_path,
@@ -278,12 +332,17 @@ def copy_to_volume(
     try:
         for source_path in source_paths:
             print(f"copy {source_path} to {destination_path}")
+            """
             helper_pod.copy_to_volume(
                 src_path=source_path,
                 dest_path=os.path.join(
                     destination_path,
                     os.path.basename(source_path),
                 ),
+            )
+            """
+            helper_pod.copy_to_volume_using_kubectl(
+                src_path=source_path, dest_path=destination_path
             )
     finally:
         helper_pod.dismiss()
