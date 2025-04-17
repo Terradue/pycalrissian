@@ -316,7 +316,7 @@ class CalrissianJob:
         return pod_template
 
     @staticmethod
-    def create_job(name, pod_template, namespace, backoff_limit=4):
+    def create_job(name, pod_template, namespace, backoff_limit=4, ttl_seconds_after_finished=0):
         metadata = client.V1ObjectMeta(
             name=name, labels={"job_name": name}, namespace=namespace
         )
@@ -328,6 +328,7 @@ class CalrissianJob:
             spec=client.V1JobSpec(
                 backoff_limit=backoff_limit,
                 template=pod_template,
+                ttl_seconds_after_finished=ttl_seconds_after_finished
             ),
         )
 
