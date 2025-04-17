@@ -45,6 +45,7 @@ class CalrissianJob:
         keep_pods: bool = False,
         backoff_limit: int = 2,
         tool_logs: bool = False,
+        self.ttl_seconds_after_finished = 0
     ):
 
         self.cwl = cwl
@@ -63,7 +64,8 @@ class CalrissianJob:
         self.keep_pods = keep_pods
         self.backoff_limit = backoff_limit
         self.volume_calrissian_wdir = "volume-calrissian-wdir"
-        self.tool_logs = tool_logs
+        self.tool_logs = tool_logs,
+        self.ttl_seconds_after_finished = ttl_seconds_after_finished
 
         if self.security_context is None:
             logger.info(
@@ -328,6 +330,7 @@ class CalrissianJob:
             spec=client.V1JobSpec(
                 backoff_limit=backoff_limit,
                 template=pod_template,
+                ttl_seconds_after_finished=self.ttl_seconds_after_finished
             ),
         )
 
