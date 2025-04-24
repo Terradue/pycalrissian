@@ -110,6 +110,6 @@ class TestCalrissianExecution(unittest.TestCase):
         print(execution.get_usage_report())
 
         print(execution.get_output())
-        print(execution.get_start_time())print(f"complete {execution.is_complete()}")
+        print(execution.get_start_time())
         print(f"succeeded {execution.is_succeeded()}")
         self.assertTrue(execution.is_succeeded())
