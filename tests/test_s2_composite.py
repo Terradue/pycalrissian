@@ -1,7 +1,8 @@
 import base64
 import os
 import unittest
-
+from loguru import logger
+import time
 import yaml
 
 from pycalrissian.context import CalrissianContext
@@ -11,9 +12,23 @@ from pycalrissian.job import CalrissianJob
 os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
+def wait_for_pvc_bound(api, name, namespace, timeout=500):
+    for t in range(timeout):
+        pvc = api.read_namespaced_persistent_volume_claim(name=name, namespace=namespace)
+        phase = pvc.status.phase
+        if t % 10 == 0: 
+            logger.warning(f"PVC phase: {phase}")
+        if phase == "Bound":
+            return True
+        time.sleep(1)
+    raise TimeoutError("PVC did not reach 'Bound' state in time")
+
 class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        logger.info(
+            f"-----\n------------------------------  unit test for test_s2_composite.py   ------------------------------\n\n"
+        )
         cls.namespace = "job-namespace-unit-test"
 
         username = ""
@@ -39,7 +54,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="openebs-kernel-nfs-scw",
+            storage_class="microk8s-hostpath",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -52,9 +67,9 @@ class TestCalrissianExecution(unittest.TestCase):
     def tearDown(cls):
         cls.session.dispose()
         
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_s2_composite_job(self):
-
+        logger.info(f"-----\n------------------------------  test_s2_composite_job must succeed  ------------------------------\n\n")
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
@@ -77,8 +92,8 @@ class TestCalrissianExecution(unittest.TestCase):
             # pod_node_selector={
             #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
             # },
-            debug=False,
-            max_cores=6,
+            debug=True,
+            max_cores=4,
             max_ram="16G",
             keep_pods=False,
             backoff_limit=1,
@@ -88,13 +103,13 @@ class TestCalrissianExecution(unittest.TestCase):
         execution = CalrissianExecution(job=job, runtime_context=self.session)
 
         execution.submit()
-
         execution.monitor(interval=5, grace_period=600, wall_time=360)
-
+        wait_for_pvc_bound(self.session.core_v1_api, "calrissian-wdir", self.session.namespace)
         print(execution.get_log())
 
         print(execution.get_usage_report())
 
         print(execution.get_output())
-
+        print(execution.get_start_time())print(f"complete {execution.is_complete()}")
+        print(f"succeeded {execution.is_succeeded()}")
         self.assertTrue(execution.is_succeeded())

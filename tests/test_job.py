@@ -1,7 +1,8 @@
 import base64
 import os
+import ast
 import unittest
-
+from loguru import logger
 from kubernetes.client.models.v1_job import V1Job
 from ruamel import yaml
 
@@ -11,9 +12,13 @@ from pycalrissian.job import CalrissianJob
 os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
+
 class TestCalrissianJob(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        logger.info(
+            f"-----\n------------------------------  unit test for test_job.py   ------------------------------\n\n"
+        )
         cls.namespace = "job-namespace"
 
         username = "pippo"
@@ -38,7 +43,7 @@ class TestCalrissianJob(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="openebs-kernel-nfs-scw",  # "microk8s-hostpath",
+            storage_class="microk8s-hostpath",  # "microk8s-hostpath",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -81,7 +86,9 @@ class TestCalrissianJob(unittest.TestCase):
         self.assertIsInstance(job.to_k8s_job(), V1Job)
 
     def test_calrissian_image(self):
-
+        logger.info(
+            f"-----\n------------------------------  test_calrissian_image   ------------------------------\n\n"
+        )
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:latest"
 
         document = "tests/simple.cwl"
@@ -108,3 +115,8 @@ class TestCalrissianJob(unittest.TestCase):
             job.to_k8s_job().spec.template.spec.containers[0].image,
             os.environ["CALRISSIAN_IMAGE"],
         )
+    def test_job_namespace_dispose(self):
+        logger.info(f"-----\n------------------------------  test_job_namespace_disposing   ------------------------------\n\n")
+        response = self.session.dispose()
+        status_dict = ast.literal_eval(response.status)
+        self.assertEqual(status_dict["phase"], "Terminating")

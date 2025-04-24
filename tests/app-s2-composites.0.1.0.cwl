@@ -151,7 +151,7 @@ $graph:
         coresMax: 2
         ramMax: 2000
       DockerRequirement:
-        dockerPull: docker.io/osgeo/gdal
+        dockerPull: ghcr.io/osgeo/gdal:alpine-small-latest
     baseCommand: gdal_translate
     arguments:
       - -projwin
@@ -210,7 +210,7 @@ $graph:
     requirements:
       InlineJavascriptRequirement: {}
       DockerRequirement:
-        dockerPull: osgeo/gdal
+        dockerPull: ghcr.io/osgeo/gdal:alpine-small-latest
       ResourceRequirement:
         coresMax: 2
         ramMax: 2000
