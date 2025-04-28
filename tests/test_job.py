@@ -43,7 +43,7 @@
 
 #         session = CalrissianContext(
 #             namespace=cls.namespace,
-#             storage_class="microk8s-hostpath",  # "microk8s-hostpath",
+#             storage_class="standard",  # "microk8s-hostpath",
 #             volume_size="10G",
 #             image_pull_secrets=secret_config,
 #         )

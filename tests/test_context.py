@@ -121,7 +121,7 @@
 #         logger.info(f"-----\n------------------------------  Testing volume {self.namespace}   ------------------------------\n\n")
 #         session = CalrissianContext(
 #             namespace=self.namespace,
-#             storage_class="microk8s-hostpath",
+#             storage_class="standard",
 #             volume_size="1G",
 #         )
 
@@ -141,7 +141,7 @@
 #         logger.info(f"-----\n------------------------------  Testing configmap {self.namespace}   ------------------------------\n\n")
 #         session = CalrissianContext(
 #             namespace=self.namespace,
-#             storage_class="microk8s-hostpath",
+#             storage_class="standard",
 #             volume_size="1G",
 #         )
 
@@ -169,7 +169,7 @@
 #         logger.info(f"-----\n------------------------------  Testing configmap {self.namespace}   ------------------------------\n\n")
 #         session = CalrissianContext(
 #             namespace=self.namespace,
-#             storage_class="microk8s-hostpath",
+#             storage_class="standard",
 #             volume_size="1G",
 #         )
 
@@ -214,7 +214,7 @@
 
 #         session = CalrissianContext(
 #             namespace=self.namespace,
-#             storage_class="microk8s-hostpath",
+#             storage_class="standard",
 #             volume_size="1G",
 #             image_pull_secrets={"imagePullSecrets": secret_config},
 #         )

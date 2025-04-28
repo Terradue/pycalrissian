@@ -16,9 +16,10 @@ def wait_for_pvc_bound(api, name, namespace, timeout=500):
     for t in range(timeout):
         pvc = api.read_namespaced_persistent_volume_claim(name=name, namespace=namespace)
         phase = pvc.status.phase
-        if t % 10 == 0: 
+        if t % 10 == 0 and phase!="Bound": 
             logger.warning(f"PVC phase: {phase}")
         if phase == "Bound":
+            logger.success(f"PVC phase: {phase}")
             return True
         time.sleep(1)
     raise TimeoutError("PVC did not reach 'Bound' state in time")
@@ -72,11 +73,14 @@ class TestCalrissianExecution(unittest.TestCase):
         logger.info(f"-----\n------------------------------  test_cropping must succeed  ------------------------------\n\n")
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
-        with open("tests/catalog-write.cwl", "r") as stream:
+        with open("tests/crop.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
 
         params = {
-            "reference": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_10TFK_20210713_0_L2A"
+            "item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_10TFK_20210713_0_L2A",
+            "aoi": "-121.399,39.834,-120.74,40.472",
+            "epsg": "EPSG:4326",
+            "band": "coastal" ,
         }
 
         pod_env_vars = {"A": "1", "B": "2"}
@@ -85,7 +89,7 @@ class TestCalrissianExecution(unittest.TestCase):
             cwl=cwl,
             params=params,
             runtime_context=self.session,
-            cwl_entry_point="main",
+            cwl_entry_point="crop",
             #pod_env_vars=pod_env_vars,
             # pod_node_selector={
             #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
@@ -93,7 +97,7 @@ class TestCalrissianExecution(unittest.TestCase):
             debug=True,
             max_cores=2,
             max_ram="16G",
-            keep_pods=False,
+            keep_pods=True,
             backoff_limit=1,
             tool_logs=True,
         )
@@ -103,6 +107,7 @@ class TestCalrissianExecution(unittest.TestCase):
         execution.submit()
         wait_for_pvc_bound(self.session.core_v1_api, "calrissian-wdir", self.session.namespace)
         execution.monitor(interval=5, grace_period=600, wall_time=360)
+        
         print(execution.get_log())
 
         print(execution.get_usage_report())
