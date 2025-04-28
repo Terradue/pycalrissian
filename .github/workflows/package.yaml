@@ -50,7 +50,18 @@ jobs:
         echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
         echo "CI_TEST_SKIP=1" >> $GITHUB_ENV
     - name: Test package
-      run: hatch -e test run nose2 --verbose
+      run: |
+        kubectl get storageclass
+        # Check if "microk8s-hostpath" StorageClass exists
+        if ! kubectl get storageclass microk8s-hostpath >/dev/null 2>&1; then
+          echo "StorageClass 'microk8s-hostpath' not found. Enabling it..."
+          microk8s enable hostpath-storage
+          sleep 10  # Wait a bit to allow it to fully start
+        else
+          echo "StorageClass 'microk8s-hostpath' already exists."
+        fi
+        hatch -e test run nose2 --verbose
+
     - name: Publish package distributions to PyPI (main)
       if: github.ref == 'refs/heads/main'
       uses: pypa/gh-action-pypi-publish@release/v1
