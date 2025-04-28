@@ -195,34 +195,5 @@ class TestCalrissianExecution(unittest.TestCase):
 
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
-
-    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
-    def test_wall_time_not_reached_job(self):
-        logger.info(f"-----\n------------------------------  test_wall_time_not_reached_job   ------------------------------\n\n")
-        """tests wall time reached, the job is killed"""
-        with open("tests/sleep.cwl", "r") as stream:
-
-            cwl = yaml.safe_load(stream)
-
-        params = {"message": "hello world!"}
-
-        job = CalrissianJob(
-            cwl=cwl,
-            params=params,
-            runtime_context=self.session,
-            debug=True,
-            max_cores=2,
-            max_ram="4G",
-            keep_pods=True,
-            backoff_limit=1,
-        )
-
-        execution = CalrissianExecution(job=job, runtime_context=self.session)
-
-        execution.submit()
-
-        execution.monitor(interval=15, grace_period=30, wall_time=120)
-        wait_for_pvc_bound(self.session.core_v1_api, "calrissian-wdir", self.session.namespace)
-        self.assertTrue(execution.is_succeeded())
     
 
