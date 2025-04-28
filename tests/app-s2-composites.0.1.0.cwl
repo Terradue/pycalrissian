@@ -4,6 +4,7 @@ $graph:
     doc: dNBR - produce the delta normalized difference between NIR and SWIR 22 over a pair of stac items
     id: dnbr
     requirements:
+      - class: InlineJavascriptRequirement
       - class: ScatterFeatureRequirement
       - class: SubworkflowFeatureRequirement
       - class: MultipleInputFeatureRequirement
@@ -63,6 +64,7 @@ $graph:
     doc: NBR - produce the normalized difference between NIR and SWIR 22 and convert to COG
     id: nbr_wf
     requirements:
+      - class: InlineJavascriptRequirement
       - class: ScatterFeatureRequirement
       - class: SubworkflowFeatureRequirement
     inputs:
@@ -119,9 +121,9 @@ $graph:
     id: asset_single_clt
     requirements:
       DockerRequirement:
-        dockerPull: docker.io/curlimages/curl:latest
+        dockerPull: curlimages/curl-base
       ResourceRequirement:
-        coresMax: 2
+        coresMax: 1
         ramMax: 2000
       ShellCommandRequirement: {}
       InlineJavascriptRequirement: {}
@@ -141,8 +143,12 @@ $graph:
           glob: message
           loadContents: true
           outputEval: |-
-            ${ var assets = JSON.parse(self[0].contents).assets;
-            return assets[inputs.asset].href; }
+            ${ 
+            
+            var assets = JSON.parse(self[0].contents).assets;
+            console.log(assets);  
+            return assets[inputs.asset].href;
+             }
   - class: CommandLineTool
     id: translate_clt
     requirements:

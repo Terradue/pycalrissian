@@ -27,7 +27,7 @@ class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         logger.info(
-            f"-----\n------------------------------  unit test for test_s2_composite.py   ------------------------------\n\n"
+            f"-----\n------------------------------  unit test for test_s2_crop.py   ------------------------------\n\n"
         )
         cls.namespace = "job-namespace-unit-test"
 
@@ -68,17 +68,15 @@ class TestCalrissianExecution(unittest.TestCase):
         cls.session.dispose()
         
     #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
-    def test_s2_composite_job(self):
-        logger.info(f"-----\n------------------------------  test_s2_composite_job must succeed  ------------------------------\n\n")
+    def test_cropping(self):
+        logger.info(f"-----\n------------------------------  test_cropping must succeed  ------------------------------\n\n")
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
-        with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
+        with open("tests/catalog-write.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
 
         params = {
-            "post_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A",  # noqa: E501
-            "pre_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210703_0_L2A",  # noqa: E501
-            "aoi": "136.659,-35.96,136.923,-35.791",
+            "reference": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_10TFK_20210713_0_L2A"
         }
 
         pod_env_vars = {"A": "1", "B": "2"}
@@ -87,15 +85,15 @@ class TestCalrissianExecution(unittest.TestCase):
             cwl=cwl,
             params=params,
             runtime_context=self.session,
-            cwl_entry_point="dnbr",
-            pod_env_vars=pod_env_vars,
+            cwl_entry_point="main",
+            #pod_env_vars=pod_env_vars,
             # pod_node_selector={
             #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
             # },
             debug=True,
-            max_cores=4,
+            max_cores=2,
             max_ram="16G",
-            keep_pods=False,
+            keep_pods=True,
             backoff_limit=1,
             tool_logs=True,
         )
