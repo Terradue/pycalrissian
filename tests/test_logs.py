@@ -1,7 +1,8 @@
 import base64
 import os
 import unittest
-
+from loguru import logger
+import ast
 import yaml
 
 from pycalrissian.context import CalrissianContext
@@ -14,6 +15,9 @@ os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 class TestCalrissianExecutionLogs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        logger.info(
+            f"-----\n------------------------------  unit test for test_logs.py   ------------------------------\n\n"
+        )
         cls.namespace = "job-namespace-unit-test"
 
         username = "fabricebrito"
@@ -39,7 +43,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="openebs-kernel-nfs-scw",
+            storage_class="microk8s-hostpath",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -54,7 +58,10 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job_tool_logs(self):
-
+        logger.info(
+            f"-----\n------------------------------  test_job_tool_logs  (must skipped) ------------------------------\n\n"
+        )
+        # Set the environment variable for the Calrissian image
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
         with open("tests/logs.cwl", "r") as stream:
@@ -96,3 +103,11 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         execution.get_tool_logs()
 
         self.assertTrue(execution.is_succeeded())
+
+    def test_job_namespace_unit_test_disposing(self):
+        logger.info(
+            f"-----\n------------------------------  test_job_namespace_unit_test_disposing   ------------------------------\n\n"
+        )
+        response = self.session.dispose()
+        status_dict = ast.literal_eval(response.status)
+        self.assertEqual(status_dict["phase"], "Terminating")
