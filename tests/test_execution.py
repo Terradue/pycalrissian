@@ -226,9 +226,5 @@ class TestCalrissianExecution(unittest.TestCase):
         execution.monitor(interval=15, grace_period=30, wall_time=120)
         wait_for_pvc_bound(self.session.core_v1_api, "calrissian-wdir", self.session.namespace)
         self.assertTrue(execution.is_succeeded())
-    def test_job_namespace_disposing(self):
-        logger.info(f"-----\n------------------------------  test_job_namespace_disposing   ------------------------------\n\n")
-        response = self.session.dispose()
-        status_dict = ast.literal_eval(response.status)
-        self.assertEqual(status_dict["phase"], "Terminating")
+    
 

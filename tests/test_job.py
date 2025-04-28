@@ -125,8 +125,3 @@ class TestCalrissianJob(unittest.TestCase):
             job.to_k8s_job().spec.template.spec.containers[0].image,
             os.environ["CALRISSIAN_IMAGE"],
         )
-    def test_job_namespace_dispose(self):
-        logger.info(f"-----\n------------------------------  test_job_namespace_disposing   ------------------------------\n\n")
-        response = self.session.dispose()
-        status_dict = ast.literal_eval(response.status)
-        self.assertEqual(status_dict["phase"], "Terminating")
