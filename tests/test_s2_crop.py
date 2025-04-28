@@ -73,14 +73,11 @@ class TestCalrissianExecution(unittest.TestCase):
         logger.info(f"-----\n------------------------------  test_cropping must succeed  ------------------------------\n\n")
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
-        with open("tests/crop.cwl", "r") as stream:
+        with open("tests/describe-catalog.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
 
         params = {
-            "item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_10TFK_20210713_0_L2A",
-            "aoi": "-121.399,39.834,-120.74,40.472",
-            "epsg": "EPSG:4326",
-            "band": "coastal" ,
+            "reference": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_10TFK_20210713_0_L2A"
         }
 
         pod_env_vars = {"A": "1", "B": "2"}
@@ -89,7 +86,7 @@ class TestCalrissianExecution(unittest.TestCase):
             cwl=cwl,
             params=params,
             runtime_context=self.session,
-            cwl_entry_point="crop",
+            cwl_entry_point="main",
             #pod_env_vars=pod_env_vars,
             # pod_node_selector={
             #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
@@ -114,5 +111,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         print(execution.get_output())
         print(execution.get_start_time())
-        print(f"succeeded {execution.is_succeeded()}")
+        if execution.is_succeeded() == True:
+            logger.success(f"Execution was succeed")
+        # print(f"succeeded {execution.is_succeeded()}")
         self.assertTrue(execution.is_succeeded())
