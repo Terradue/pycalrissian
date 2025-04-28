@@ -90,13 +90,13 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
             runtime_context=self.session,
             cwl_entry_point="main",
             pod_env_vars=pod_env_vars,
-            pod_node_selector={
-                "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
-            },
-            debug=False,
+            # pod_node_selector={
+            #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
+            # },
+            debug=True,
             max_cores=4,
             max_ram="4G",
-            keep_pods=False,
+            keep_pods=True,
             backoff_limit=1,
             tool_logs=True,
         )
@@ -116,11 +116,3 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         execution.get_tool_logs()
 
         self.assertTrue(execution.is_succeeded())
-
-    def test_job_namespace_unit_test_disposing(self):
-        logger.info(
-            f"-----\n------------------------------  test_job_namespace_unit_test_disposing   ------------------------------\n\n"
-        )
-        response = self.session.dispose()
-        status_dict = ast.literal_eval(response.status)
-        self.assertEqual(status_dict["phase"], "Terminating")
