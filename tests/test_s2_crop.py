@@ -101,8 +101,8 @@ class TestCalrissianExecution(unittest.TestCase):
         execution = CalrissianExecution(job=job, runtime_context=self.session)
 
         execution.submit()
-        execution.monitor(interval=5, grace_period=600, wall_time=360)
         wait_for_pvc_bound(self.session.core_v1_api, "calrissian-wdir", self.session.namespace)
+        execution.monitor(interval=5, grace_period=600, wall_time=360)
         print(execution.get_log())
 
         print(execution.get_usage_report())
