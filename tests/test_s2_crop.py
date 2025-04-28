@@ -93,7 +93,7 @@ class TestCalrissianExecution(unittest.TestCase):
             debug=True,
             max_cores=2,
             max_ram="16G",
-            keep_pods=True,
+            keep_pods=False,
             backoff_limit=1,
             tool_logs=True,
         )

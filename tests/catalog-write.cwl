@@ -32,14 +32,11 @@ requirements:
           config = stac_asset.Config(warn=True)
 
           async def main(href: str):
-              
+              print("HREF: ",href)
               item = pystac.read_file(href)
-              
-              os.makedirs(item.id, exist_ok=True)
               cwd = os.getcwd()
               
-              os.chdir(item.id)
-              os.chdir(cwd)
+              
               
               cat = pystac.Catalog(
                   id="catalog",
@@ -47,12 +44,11 @@ requirements:
                   title=f"catalog with staged {item.id}",
               )
               cat.add_item(item)
+              print(cat.describe())
               
-              cat.normalize_hrefs("./")
-              cat.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
 
               return cat
 
           href = sys.argv[1]
 
-          cat = asyncio.run(main(href))
+          asyncio.run(main(href))
