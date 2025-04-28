@@ -69,8 +69,8 @@ class TestCalrissianExecution(unittest.TestCase):
         cls.session.dispose()
         
     #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
-    def test_cropping(self):
-        logger.info(f"-----\n------------------------------  test_cropping must succeed  ------------------------------\n\n")
+    def test_describe_catalog(self):
+        logger.info(f"-----\n------------------------------  test_describe_catalog must succeed  ------------------------------\n\n")
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
         with open("tests/describe-catalog.cwl", "r") as stream:
