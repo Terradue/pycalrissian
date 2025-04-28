@@ -17,9 +17,10 @@ def wait_for_pvc_bound(api, name, namespace, timeout=500):
     for t in range(timeout):
         pvc = api.read_namespaced_persistent_volume_claim(name=name, namespace=namespace)
         phase = pvc.status.phase
-        if t % 10 == 0: 
+        if t % 10 == 0 and phase!="Bound": 
             logger.warning(f"PVC phase: {phase}")
         if phase == "Bound":
+            logger.success(f"PVC phase: {phase}")
             return True
         time.sleep(1)
     raise TimeoutError("PVC did not reach 'Bound' state in time")
