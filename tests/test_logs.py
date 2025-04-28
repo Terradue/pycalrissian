@@ -65,9 +65,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
 
         cls.session = session
 
-    # @classmethod
-    # def tearDown(cls):
-    #     cls.session.dispose()
+    
         
     #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job_tool_logs(self):

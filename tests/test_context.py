@@ -222,7 +222,7 @@ class TestCalrissianContext(unittest.TestCase):
         response = session.create_image_pull_secret(name="container-rg")
 
         self.assertIsInstance(response, V1Secret)
-        session.dispose()
+        
         
 
 # # if __name__ == "__main__":

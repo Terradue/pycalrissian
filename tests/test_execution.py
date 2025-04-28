@@ -61,11 +61,9 @@ class TestCalrissianExecution(unittest.TestCase):
         
         cls.session = session
 
-    @classmethod
-    def tearDown(cls):
-        cls.session.dispose()
+    
 
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_simple_job(self):
         logger.info(f"-----\n------------------------------  test_simple_job   ------------------------------\n\n")
         with open("tests/simple.cwl", "r") as stream:
@@ -101,7 +99,7 @@ class TestCalrissianExecution(unittest.TestCase):
         self.assertTrue(execution.is_succeeded())
         logger.success(f"succeeded {execution.is_succeeded()}")
 
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wrong_docker_pull_job(self):
         logger.info(f"-----\n------------------------------  test_wrong_docker_pull_job   ------------------------------\n\n")
         """tests the imagepullbackoff state of a pod, the job is killed"""
@@ -168,7 +166,7 @@ class TestCalrissianExecution(unittest.TestCase):
         logger.success(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wall_time_reached_job(self):
         """tests wall time reached, the job is killed"""
         logger.info(f"-----\n------------------------------  test_wall_time_reached_job   ------------------------------\n\n")
@@ -198,7 +196,7 @@ class TestCalrissianExecution(unittest.TestCase):
         print(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
 
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wall_time_not_reached_job(self):
         logger.info(f"-----\n------------------------------  test_wall_time_not_reached_job   ------------------------------\n\n")
         """tests wall time reached, the job is killed"""
