@@ -64,7 +64,7 @@ class TestCalrissianJob(unittest.TestCase):
 
     
 
-    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job_instance(self):
         logger.info(
             f"-----\n------------------------------  test_job_instance   ------------------------------\n\n"
@@ -94,7 +94,7 @@ class TestCalrissianJob(unittest.TestCase):
 
         job.to_yaml("job.yml")
         self.assertIsInstance(job.to_k8s_job(), V1Job)
-
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_image_refrence(self):
         logger.info(
             f"-----\n------------------------------  test_image_refrence   ------------------------------\n\n"
