@@ -65,8 +65,10 @@ class TestCalrissianJob(unittest.TestCase):
     
 
     #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
-    def test_job(self):
-        # TODO check why this fails with namespace is being terminated
+    def test_job_instance(self):
+        logger.info(
+            f"-----\n------------------------------  test_job_instance   ------------------------------\n\n"
+        )
         document = "tests/simple.cwl"
         with open(document) as doc_handle:
             yaml_obj = yaml.YAML()
@@ -93,11 +95,11 @@ class TestCalrissianJob(unittest.TestCase):
         job.to_yaml("job.yml")
         self.assertIsInstance(job.to_k8s_job(), V1Job)
 
-    def test_image(self):
+    def test_image_refrence(self):
         logger.info(
-            f"-----\n------------------------------  test_image   ------------------------------\n\n"
+            f"-----\n------------------------------  test_image_refrence   ------------------------------\n\n"
         )
-        os.environ["IMAGE"] = "docker.io/bash:4.4"
+        os.environ["IMAGE"] = "terradue/calrissian:0.12.0"
 
         document = "tests/simple.cwl"
 
