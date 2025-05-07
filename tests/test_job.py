@@ -93,11 +93,11 @@ class TestCalrissianJob(unittest.TestCase):
         job.to_yaml("job.yml")
         self.assertIsInstance(job.to_k8s_job(), V1Job)
 
-    def test_calrissian_image(self):
+    def test_image(self):
         logger.info(
-            f"-----\n------------------------------  test_calrissian_image   ------------------------------\n\n"
+            f"-----\n------------------------------  test_image   ------------------------------\n\n"
         )
-        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:latest"
+        os.environ["IMAGE"] = "docker.io/bash:4.4"
 
         document = "tests/simple.cwl"
 
@@ -121,5 +121,5 @@ class TestCalrissianJob(unittest.TestCase):
 
         self.assertEqual(
             job.to_k8s_job().spec.template.spec.containers[0].image,
-            os.environ["CALRISSIAN_IMAGE"],
+            os.environ["IMAGE"],
         )
