@@ -26,6 +26,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
+    "packaging==25.0",
     "loguru",
     "typing-extensions==4.8.0",
     "kubernetes==28.1.0",
@@ -68,6 +69,7 @@ tests = ["tests"]
 [tool.hatch.envs.default]
 skip-install = false
 dependencies = [
+    "packaging==25.0",
     "nose2",
     "coverage",
     "loguru",
