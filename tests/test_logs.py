@@ -1,7 +1,9 @@
 import base64
 import os
 import unittest
-
+from loguru import logger
+import time
+import ast
 import yaml
 
 from pycalrissian.context import CalrissianContext
@@ -11,9 +13,24 @@ from pycalrissian.job import CalrissianJob
 os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
+def wait_for_pvc_bound(api, name, namespace, timeout=500):
+    for t in range(timeout):
+        pvc = api.read_namespaced_persistent_volume_claim(name=name, namespace=namespace)
+        phase = pvc.status.phase
+        if t % 10 == 0 and phase!="Bound": 
+            logger.warning(f"PVC phase: {phase}")
+        if phase == "Bound":
+            logger.success(f"PVC phase: {phase}")
+            return True
+        time.sleep(1)
+    raise TimeoutError("PVC did not reach 'Bound' state in time")
+
 class TestCalrissianExecutionLogs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        logger.info(
+            f"-----\n------------------------------  unit test for test_logs.py   ------------------------------\n\n"
+        )
         cls.namespace = "job-namespace-unit-test"
 
         username = "fabricebrito"
@@ -39,7 +56,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="openebs-kernel-nfs-scw",
+            storage_class="standard",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -48,13 +65,14 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
 
         cls.session = session
 
-    @classmethod
-    def tearDown(cls):
-        cls.session.dispose()
+    
         
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job_tool_logs(self):
-
+        logger.info(
+            f"-----\n------------------------------  test_job_tool_logs  (must skipped) ------------------------------\n\n"
+        )
+        # Set the environment variable for the Calrissian image
         os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
 
         with open("tests/logs.cwl", "r") as stream:
@@ -70,13 +88,13 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
             runtime_context=self.session,
             cwl_entry_point="main",
             pod_env_vars=pod_env_vars,
-            pod_node_selector={
-                "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
-            },
-            debug=False,
+            # pod_node_selector={
+            #     "k8s.scaleway.com/pool-name": "processing-node-pool-dev"
+            # },
+            debug=True,
             max_cores=4,
             max_ram="4G",
-            keep_pods=False,
+            keep_pods=True,
             backoff_limit=1,
             tool_logs=True,
         )
@@ -84,7 +102,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         execution = CalrissianExecution(job=job, runtime_context=self.session)
 
         execution.submit()
-
+        wait_for_pvc_bound(self.session.core_v1_api, "calrissian-wdir", self.session.namespace)
         execution.monitor(interval=5, grace_period=600, wall_time=120)
 
         print(execution.get_log())
