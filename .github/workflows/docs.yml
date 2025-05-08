@@ -25,8 +25,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pdocs kubernetes loguru pyyaml
-          python setup.py install
+          pip install pdocs kubernetes loguru pyyaml packaging hatch 
+          pip install .
+          
       - name: update API docs
         run: |
           pdocs as_markdown --output_dir docs/api/ --exclude_source --overwrite pycalrissian
