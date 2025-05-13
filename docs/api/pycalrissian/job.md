@@ -21,7 +21,8 @@ class CalrissianJob(
     no_read_only: bool = False,
     keep_pods: bool = False,
     backoff_limit: int = 2,
-    tool_logs: bool = False
+    tool_logs: bool = False,
+    ttl_seconds_after_finished: int = None
 )
 ```
 
@@ -50,7 +51,8 @@ def create_job(
     name,
     pod_template,
     namespace,
-    backoff_limit=4
+    backoff_limit=4,
+    ttl_seconds_after_finished=None
 )
 ```
 
@@ -63,7 +65,8 @@ def create_pod_template(
     containers,
     volumes,
     security_context,
-    node_selector=None
+    node_selector=None,
+    service_account=None
 )
 ```
 

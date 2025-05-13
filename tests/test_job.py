@@ -2,6 +2,7 @@ import base64
 import os
 import ast
 import unittest
+from unittest import mock
 from loguru import logger
 from kubernetes.client.models.v1_job import V1Job
 from ruamel import yaml
@@ -125,3 +126,45 @@ class TestCalrissianJob(unittest.TestCase):
             job.to_k8s_job().spec.template.spec.containers[0].image,
             os.environ["IMAGE"],
         )
+
+    
+    @mock.patch("pycalrissian.context.CalrissianContext.from_existing_namespace")
+    def test_job_with_specific_service_account(
+        self,
+        mock_from_existing_namespace
+    ):
+
+        mock_context = mock.Mock()
+        mock_context.namespace=self.namespace
+        mock_context.storage_class = "dummy-storage-class"
+        mock_context.service_account = "dummy-service-account"
+        mock_context.volume_size = "1G"
+        mock_from_existing_namespace.return_value = mock_context
+
+        os.environ["IMAGE"] = "terradue/calrissian:0.12.0"
+
+        document = "tests/simple.cwl"
+
+        with open(document) as doc_handle:
+            yaml_obj = yaml.YAML()
+            cwl = yaml_obj.load(doc_handle)
+
+        params = {"message": "hello world!"}
+
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=mock_context,
+            pod_env_vars={},
+            pod_node_selector={},
+            debug=True,
+            max_cores=2,
+            max_ram="4G",
+            keep_pods=True,
+        )
+        
+        self.assertEqual(job.to_k8s_job().metadata.namespace, self.namespace)
+
+        job_service_account = job.to_k8s_job().spec.template.spec.service_account_name
+
+        self.assertEqual(job_service_account, mock_context.service_account)

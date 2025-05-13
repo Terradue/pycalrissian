@@ -62,6 +62,7 @@ class CalrissianContext:
         self.annotations = annotations
 
         self.existing_namespace = False
+        self.service_account = None
 
     @classmethod
     def from_existing_namespace(
@@ -69,11 +70,12 @@ class CalrissianContext:
         namespace: str,
         storage_class: str,
         volume_size: str,
+        service_account: Optional[str] = None,
         resource_quota: Optional[Dict] = None,
         image_pull_secrets: Optional[Dict] = None,
         kubeconfig_file: Optional[TextIO] = None,
         labels: Optional[Dict] = None,
-        annotations: Optional[Dict] = None
+        annotations: Optional[Dict] = None,
     ) -> "CalrissianContext":
         """
         Creates a CalrissianContext for an existing Kubernetes namespace.
@@ -103,6 +105,8 @@ class CalrissianContext:
             annotations
         )
         instance.existing_namespace = True
+        instance.service_account = service_account
+
         return instance
 
     def initialise(self):

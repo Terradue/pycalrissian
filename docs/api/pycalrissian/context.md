@@ -18,7 +18,24 @@ class CalrissianContext(
 ```
 
 Creates a kubernetes namespace to run calrissian jobs
+#### Class methods
 
+```python3
+def from_existing_namespace(
+    cls,
+    namespace: str,
+    storage_class: str,
+    volume_size: str,
+    service_account: Optional[str] = None,
+    resource_quota: Optional[Dict] = None,
+    image_pull_secrets: Optional[Dict] = None,
+    kubeconfig_file: Optional[TextIO] = None,
+    labels: Optional[Dict] = None,
+    annotations: Optional[Dict] = None,
+) -> CalrissianContext
+```
+
+Creates CalrissianContext instance using an already created namespace
 #### Static methods
 
     
