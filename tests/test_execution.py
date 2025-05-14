@@ -134,6 +134,51 @@ class TestCalrissianExecution(unittest.TestCase):
             self.assertFalse(execution.is_succeeded())
             logger.success(f"Is succeeded? {execution.is_succeeded()}")
 
+
+    def test_remove_job_using_ttl(self):
+        logger.info(f"-----\n-----------------------  test_remove_job_using_ttl  -------------------------------\n\n")
+        with open("tests/simple.cwl", "r") as stream:
+
+            cwl = yaml.safe_load(stream)
+
+        params = {"message": "hello world!"}
+
+        pod_env_vars = {"A": "1", "B": "2"}
+
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=self.session,
+            pod_env_vars=pod_env_vars,
+            debug=True,
+            max_cores=2,
+            max_ram="4G",
+            keep_pods=True,
+            backoff_limit=1,
+            ttl_seconds_after_finished=5
+        )
+
+        execution = CalrissianExecution(job=job, runtime_context=self.session)
+
+        execution.submit()
+        wait_for_pvc_bound(self.session.core_v1_api, "calrissian-wdir", self.session.namespace)
+        execution.monitor(interval=5, wall_time=360)
+
+        print(f"complete {execution.is_complete()}")
+
+        print(execution.get_start_time())
+        print(execution.get_completion_time())
+        self.assertTrue(execution.is_succeeded())
+        logger.success(f"succeeded {execution.is_succeeded()}")
+        
+        # Wait for ttl time, catch IndexError since get_log() tries to read from pod empty list.
+        # Beacuse of IndexError we are sure that the job is deleted.
+        time.sleep(7)
+        with self.assertRaises(IndexError):
+            execution.get_log()
+            logger.info("Job deleted according to ttl")
+            
+
     #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_high_reqs_job(self):
         """tests the high reqs for RAM and cores, the job is killed"""
@@ -166,5 +211,3 @@ class TestCalrissianExecution(unittest.TestCase):
 
         logger.success(f"killed {execution.killed}")
         self.assertFalse(execution.is_succeeded())
-
-    

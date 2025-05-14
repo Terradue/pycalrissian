@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import unittest
+from unittest import mock
 from loguru import logger
 import yaml
 from kubernetes.client.models.v1_config_map import V1ConfigMap
@@ -222,8 +223,40 @@ class TestCalrissianContext(unittest.TestCase):
         response = session.create_image_pull_secret(name="container-rg")
 
         self.assertIsInstance(response, V1Secret)
+
+
+    @mock.patch.object(CalrissianContext, "_get_api_client")
+    @mock.patch.object(CalrissianContext, "_get_core_v1_api")
+    @mock.patch.object(CalrissianContext, "_get_batch_v1_api")
+    @mock.patch.object(CalrissianContext, "_get_rbac_authorization_v1_api")
+    def test_context_from_existing_namespace(
+        self,
+        mock_get_rbac_api,
+        mock_get_batch_api,
+        mock_get_core_api,
+        mock_get_api_client
+    ):
+
+        mock_get_api_client.return_value = mock.Mock()
+        mock_get_batch_api.return_value = mock.Mock()
+        mock_get_rbac_api.return_value = mock.Mock()
+
+        mock_core_v1 = mock.Mock()
+        mock_get_core_api.return_value = mock_core_v1
+        mock_core_v1.read_namespace.return_value = {"metadata": {"name": self.namespace}}
         
-        
+        session = CalrissianContext.from_existing_namespace(
+            namespace=self.namespace,
+            storage_class="dummy-storage-class",
+            volume_size="1G"
+        )
+
+
+        self.assertEqual(session.namespace, self.namespace)
+        self.assertEqual(session.storage_class,"dummy-storage-class")
+        self.assertEqual(session.volume_size, "1G")
+        self.assertTrue(session.existing_namespace)
+
 
 # # if __name__ == "__main__":
 # #     import nose2

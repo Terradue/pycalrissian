@@ -45,6 +45,7 @@ class CalrissianJob:
         keep_pods: bool = False,
         backoff_limit: int = 2,
         tool_logs: bool = False,
+        ttl_seconds_after_finished: int = None
     ):
 
         self.cwl = cwl
@@ -64,6 +65,11 @@ class CalrissianJob:
         self.backoff_limit = backoff_limit
         self.volume_calrissian_wdir = "volume-calrissian-wdir"
         self.tool_logs = tool_logs
+        self.ttl_seconds_after_finished = ttl_seconds_after_finished
+
+        if runtime_context.service_account is not None:
+            logger.info(f"using '{runtime_context.service_account}' service account selected from runtime context")
+            self.service_account = runtime_context.service_account
 
         if self.security_context is None:
             logger.info(
@@ -256,6 +262,7 @@ class CalrissianJob:
             ],
             volumes=volumes,
             security_context=self.security_context,
+            service_account=self.service_account
         )
 
         return self.create_job(
@@ -263,6 +270,7 @@ class CalrissianJob:
             pod_template=pod_spec,
             namespace=self.runtime_context.namespace,
             backoff_limit=self.backoff_limit,
+            ttl_seconds_after_finished=self.ttl_seconds_after_finished
         )
 
     @staticmethod
@@ -293,7 +301,7 @@ class CalrissianJob:
 
     @staticmethod
     def create_pod_template(
-        name, containers, volumes, security_context, node_selector=None
+        name, containers, volumes, security_context, node_selector=None, service_account=None
     ):
         """Creates the pod template with the three containers"""
 
@@ -308,6 +316,7 @@ class CalrissianJob:
                     run_as_user=security_context["runAsUser"],
                     fs_group=security_context["fsGroup"],
                 ),
+                service_account_name=service_account,
                 termination_grace_period_seconds=120,
             ),
             metadata=client.V1ObjectMeta(name=name, labels={"pod_name": name}),
@@ -316,7 +325,7 @@ class CalrissianJob:
         return pod_template
 
     @staticmethod
-    def create_job(name, pod_template, namespace, backoff_limit=4):
+    def create_job(name, pod_template, namespace, backoff_limit=4, ttl_seconds_after_finished=None):
         metadata = client.V1ObjectMeta(
             name=name, labels={"job_name": name}, namespace=namespace
         )
@@ -328,6 +337,7 @@ class CalrissianJob:
             spec=client.V1JobSpec(
                 backoff_limit=backoff_limit,
                 template=pod_template,
+                ttl_seconds_after_finished=ttl_seconds_after_finished
             ),
         )
 
