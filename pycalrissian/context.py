@@ -167,7 +167,7 @@ class CalrissianContext:
             name=self.calrissian_wdir,
             size=self.volume_size,
             storage_class=self.storage_class,
-            access_modes=["ReadWriteMany"],
+            access_modes=["ReadWriteOnce"], # change to ReadWriteOnce if needed
         )
 
         assert isinstance(response, V1PersistentVolumeClaim)

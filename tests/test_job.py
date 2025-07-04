@@ -30,7 +30,7 @@ class TestCalrissianJob(unittest.TestCase):
         logger.info(
             f"-----\n------------------------------  unit test for test_job.py   ------------------------------\n\n"
         )
-        cls.namespace = "job-namespace"
+        cls.namespace = "job-namespace-4"
 
         username = "pippo"
         password = "pippo"
@@ -96,11 +96,11 @@ class TestCalrissianJob(unittest.TestCase):
         job.to_yaml("job.yml")
         self.assertIsInstance(job.to_k8s_job(), V1Job)
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
-    def test_image_refrence(self):
+    def test_image_reference(self):
         logger.info(
-            f"-----\n------------------------------  test_image_refrence   ------------------------------\n\n"
+            f"-----\n------------------------------  test_image_reference   ------------------------------\n\n"
         )
-        os.environ["IMAGE"] = "terradue/calrissian:0.12.0"
+        os.environ["IMAGE"] = "ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
 
         document = "tests/simple.cwl"
 
@@ -141,7 +141,7 @@ class TestCalrissianJob(unittest.TestCase):
         mock_context.volume_size = "1G"
         mock_from_existing_namespace.return_value = mock_context
 
-        os.environ["IMAGE"] = "terradue/calrissian:0.12.0"
+        os.environ["IMAGE"] = "ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
 
         document = "tests/simple.cwl"
 

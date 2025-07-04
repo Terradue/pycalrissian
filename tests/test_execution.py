@@ -31,7 +31,7 @@ class TestCalrissianExecution(unittest.TestCase):
     def setUpClass(cls):
         print(os.getenv("CI_TEST_SKIP", None))
         logger.info(f"-----\n------------------------------  unit test for test_execution.py   ------------------------------\n\n")
-        cls.namespace = "job-namespace"
+        cls.namespace = "job-namespace-2"
 
         username = "fabricebrito"
         password = "dckr_pat_cVqA0dOTLkQi6XxDklSPpH91Qic"
@@ -64,7 +64,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
     
 
-    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_simple_job(self):
         logger.info(f"-----\n------------------------------  test_simple_job   ------------------------------\n\n")
         with open("tests/simple.cwl", "r") as stream:
@@ -100,7 +100,7 @@ class TestCalrissianExecution(unittest.TestCase):
         self.assertTrue(execution.is_succeeded())
         logger.success(f"succeeded {execution.is_succeeded()}")
 
-    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_wrong_docker_pull_job(self):
         logger.info(f"-----\n------------------------------  test_wrong_docker_pull_job   ------------------------------\n\n")
         """tests the imagepullbackoff state of a pod, the job is killed"""
@@ -134,7 +134,7 @@ class TestCalrissianExecution(unittest.TestCase):
             self.assertFalse(execution.is_succeeded())
             logger.success(f"Is succeeded? {execution.is_succeeded()}")
 
-
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_remove_job_using_ttl(self):
         logger.info(f"-----\n-----------------------  test_remove_job_using_ttl  -------------------------------\n\n")
         with open("tests/simple.cwl", "r") as stream:
@@ -179,7 +179,7 @@ class TestCalrissianExecution(unittest.TestCase):
             logger.info("Job deleted according to ttl")
             
 
-    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_high_reqs_job(self):
         """tests the high reqs for RAM and cores, the job is killed"""
         logger.info(f"-----\n------------------------------  test_high_reqs_job   ------------------------------\n\n")

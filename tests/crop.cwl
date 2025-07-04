@@ -11,6 +11,7 @@ requirements:
       coresMax: 1
       ramMax: 512
 hints:
+  
   DockerRequirement:
     dockerPull: localhost/crop:latest
 baseCommand: ["python", "-m", "app"]

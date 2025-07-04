@@ -31,7 +31,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         logger.info(
             f"-----\n------------------------------  unit test for test_logs.py   ------------------------------\n\n"
         )
-        cls.namespace = "job-namespace-unit-test"
+        cls.namespace = "job-namespace-5"
 
         username = "fabricebrito"
         password = ""

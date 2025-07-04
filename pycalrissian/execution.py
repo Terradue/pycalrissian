@@ -33,6 +33,7 @@ class CalrissianExecution:
         response = self.runtime_context.batch_v1_api.create_namespaced_job(
             self.runtime_context.namespace, self.job.to_k8s_job()
         )
+        
         self.namespaced_job_name = self.job.job_name
         self.namespaced_job = response
         logger.info(f"job {self.job.job_name} submitted")
