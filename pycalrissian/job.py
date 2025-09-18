@@ -101,9 +101,10 @@ class CalrissianJob:
 
     def _create_cwl_cm(self):
         """Create configMap with CWL"""
-        self.runtime_context.create_configmap(
-            name="cwl-workflow", key="cwl-workflow", content=yaml.dump(self.cwl)
-        )
+        with open(os.environ.get("ZOO_WRAPPED_WORKFLOW"),"r") as stream:
+            self.runtime_context.create_configmap(
+                name="cwl-workflow", key="cwl-workflow", content=stream.read()
+            )
 
     def _create_params_cm(self):
         """Create configMap with params"""
