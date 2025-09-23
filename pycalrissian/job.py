@@ -16,6 +16,9 @@ from loguru import logger
 
 from pycalrissian.context import CalrissianContext
 
+from ruamel.yaml import YAML
+import io
+_yaml = YAML()
 
 class ContainerNames(Enum):
     CALRISSIAN = "calrissian"
@@ -101,10 +104,11 @@ class CalrissianJob:
 
     def _create_cwl_cm(self):
         """Create configMap with CWL"""
-        with open(os.environ.get("ZOO_WRAPPED_WORKFLOW"),"r") as stream:
-            self.runtime_context.create_configmap(
-                name="cwl-workflow", key="cwl-workflow", content=stream.read()
-            )
+        buf = io.StringIO()
+        _yaml.dump(self.cwl,buf)
+        self.runtime_context.create_configmap(
+            name="cwl-workflow", key="cwl-workflow", content=buf.getvalue()
+        )
 
     def _create_params_cm(self):
         """Create configMap with params"""
