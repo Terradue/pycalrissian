@@ -219,7 +219,7 @@ class CalrissianExecution:
                     self.runtime_context.batch_v1_api.delete_namespaced_job(
                         namespace=self.runtime_context.namespace,
                         name=self.namespaced_job_name,
-                        _request_timeout=wall_time,
+                        timeout_seconds=wall_time,
                     )
                     return
 
@@ -233,7 +233,7 @@ class CalrissianExecution:
                         self.runtime_context.batch_v1_api.delete_namespaced_job(
                             namespace=self.runtime_context.namespace,
                             name=self.namespaced_job_name,
-                            _request_timeout=wall_time,
+                            timeout_seconds=wall_time,
                         )
                         return
 
