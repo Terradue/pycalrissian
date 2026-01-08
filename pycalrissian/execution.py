@@ -150,7 +150,7 @@ class CalrissianExecution:
             pods_list = self.runtime_context.core_v1_api.list_namespaced_pod(
                 namespace=self.runtime_context.namespace,
                 label_selector=pod_label_selector,
-                timeout_seconds=10,
+                _request_timeout=10,
             )
             pod_name = pods_list.items[0].metadata.name
 
@@ -219,7 +219,7 @@ class CalrissianExecution:
                     self.runtime_context.batch_v1_api.delete_namespaced_job(
                         namespace=self.runtime_context.namespace,
                         name=self.namespaced_job_name,
-                        timeout_seconds=wall_time,
+                        _request_timeout=wall_time,
                     )
                     return
 
@@ -233,7 +233,7 @@ class CalrissianExecution:
                         self.runtime_context.batch_v1_api.delete_namespaced_job(
                             namespace=self.runtime_context.namespace,
                             name=self.namespaced_job_name,
-                            timeout_seconds=wall_time,
+                            _request_timeout=wall_time,
                         )
                         return
 
