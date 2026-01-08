@@ -1,7 +1,8 @@
 import base64
 import os
+import ast
 import unittest
-
+from loguru import logger
 from pycalrissian.context import CalrissianContext
 
 os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
@@ -10,6 +11,7 @@ os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        logger.info(f"-----\n------------------------------  unit test for test_session.py   ------------------------------\n\n")
         cls.namespace = "deleted-namespace"
 
         username = "fabricebrito"
@@ -37,8 +39,8 @@ class TestCalrissianExecution(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="longhorn",
-            volume_size="10G",
+            storage_class="standard",
+            volume_size="1G",
             image_pull_secrets=secret_config,
         )
 
@@ -46,10 +48,6 @@ class TestCalrissianExecution(unittest.TestCase):
 
         cls.session = session
 
-    @classmethod
-    def tearDown(cls):
-        pass
-
-    def test_session_dispose(self):
-
-        self.session.dispose()
+    
+        
+        

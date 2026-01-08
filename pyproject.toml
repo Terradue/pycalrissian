@@ -68,6 +68,7 @@ tests = ["tests"]
 [tool.hatch.envs.default]
 skip-install = false
 dependencies = [
+    "packaging",
     "nose2",
     "coverage",
     "loguru",

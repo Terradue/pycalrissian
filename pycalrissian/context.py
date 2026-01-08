@@ -3,7 +3,7 @@ import json
 import os
 import time
 from http import HTTPStatus
-from typing import Dict, TextIO
+from typing import Dict, Optional, TextIO
 
 from kubernetes import client, config
 from kubernetes.client import Configuration
@@ -61,6 +61,54 @@ class CalrissianContext:
         self.labels = labels
         self.annotations = annotations
 
+        self.existing_namespace = False
+        self.service_account = None
+
+    @classmethod
+    def from_existing_namespace(
+        cls,
+        namespace: str,
+        storage_class: str,
+        volume_size: str,
+        service_account: Optional[str] = None,
+        resource_quota: Optional[Dict] = None,
+        image_pull_secrets: Optional[Dict] = None,
+        kubeconfig_file: Optional[TextIO] = None,
+        labels: Optional[Dict] = None,
+        annotations: Optional[Dict] = None,
+    ) -> "CalrissianContext":
+        """
+        Creates a CalrissianContext for an existing Kubernetes namespace.
+
+        Args:
+            namespace (str): Name of the existing Kubernetes namespace (with the required
+                service account, roles, and role bindings already set up).
+            storage_class (str): Name of the storage class for the RWX persistent volume claim.
+            volume_size (str): Size of the RWX volume (e.g., "10G").
+            resource_quota (Optional[Dict]): Optional resource quota for the namespace.
+            image_pull_secrets (Optional[Dict]): Dictionary containing image pull secrets.
+            kubeconfig_file (Optional[TextIO]): File object pointing to the kubeconfig.
+            labels (Optional[Dict]): Optional labels to apply to namespace resources.
+            annotations (Optional[Dict]): Optional annotations to apply to namespace resources.
+
+        Returns:
+            CalrissianContext: An instance configured to use an existing namespace.
+        """
+        instance = cls(
+            namespace,
+            storage_class,
+            volume_size,
+            resource_quota,
+            image_pull_secrets,
+            kubeconfig_file,
+            labels,
+            annotations
+        )
+        instance.existing_namespace = True
+        instance.service_account = service_account
+
+        return instance
+
     def initialise(self):
         """Create the kubernetes resources to run a Calrissian job
 
@@ -71,36 +119,44 @@ class CalrissianContext:
             None
         """
         # create namespace
-        if not self.is_namespace_created():
-            logger.info(f"create namespace {self.namespace}")
-            self.create_namespace(labels=self.labels, annotations=self.annotations)
 
-        # create roles and role binding
-        roles = {}
+        if self.existing_namespace is False:
+            if not self.is_namespace_created():
+                logger.info(f"create namespace '{self.namespace}'.")
+                self.create_namespace(labels=self.labels, annotations=self.annotations)
 
-        roles["pod-manager-role"] = {
-            "verbs": ["create", "patch", "delete", "list", "watch"],
-            "role_binding": "pod-manager-default-binding",
-        }
+            # create roles and role binding
+            roles = {}
 
-        roles["log-reader-role"] = {
-            "verbs": ["get", "list"],
-            "role_binding": "log-reader-default-binding",
-        }
+            roles["pod-manager-role"] = {
+                "verbs": ["create", "patch", "delete", "list", "watch"],
+                "role_binding": "pod-manager-default-binding",
+            }
 
-        for key, value in roles.items():
-            logger.info(f"create role {key}")
-            response = self.create_role(
-                name=key,
-                verbs=value["verbs"],
-                resources=["pods", "pods/log"],
-                api_groups=["*"],
-            )
-            # print(type(response))
-            # assert(isinstance(response, V1Role))
-            logger.info(f"create role binding for role {key}")
-            self.create_role_binding(name=value["role_binding"], role=key)
-            # assert(isinstance(response, V1RoleBinding))
+            roles["log-reader-role"] = {
+                "verbs": ["get", "list"],
+                "role_binding": "log-reader-default-binding",
+            }
+
+            for key, value in roles.items():
+                logger.info(f"create role {key}")
+                response = self.create_role(
+                    name=key,
+                    verbs=value["verbs"],
+                    resources=["pods", "pods/log"],
+                    api_groups=["*"],
+                )
+                # print(type(response))
+                # assert(isinstance(response, V1Role))
+                logger.info(f"create role binding for role {key}")
+                self.create_role_binding(name=value["role_binding"], role=key)
+                # assert(isinstance(response, V1RoleBinding))
+        else:
+            if not self.is_namespace_created():
+                logger.warning(f"Namespace '{self.namespace}' does not exist.")
+                raise ValueError(f"Namespace '{self.namespace}' was not found and cannot be reused.")
+            else:
+                logger.info(f"Namespace '{self.namespace}' exists. Proceeding to reuse it.")
 
         # create volumes
         logger.info(
