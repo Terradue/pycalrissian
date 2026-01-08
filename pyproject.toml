@@ -28,8 +28,8 @@ classifiers = [
 dependencies = [
     "loguru",
     "typing-extensions==4.8.0",
-    "kubernetes==28.1.0",
-    "cwltool==3.1.20240708091337",
+    "kubernetes>=33.1.0",
+    "cwltool>=3.1.20260108082145",
     "setuptools==70.0.0"
 ]
 
@@ -72,8 +72,8 @@ dependencies = [
     "coverage",
     "loguru",
     "typing-extensions==4.8.0",
-    "kubernetes==28.1.0",
-    "cwltool==3.1.20240708091337",
+    "kubernetes>=33.1.0",
+    "cwltool>=3.1.20260108082145",
     "setuptools==70.0.0"
 ]
 
