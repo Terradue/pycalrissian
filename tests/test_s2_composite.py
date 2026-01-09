@@ -8,13 +8,13 @@ from pycalrissian.context import CalrissianContext
 from pycalrissian.execution import CalrissianExecution
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/config"
 
 
 class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.namespace = "job-namespace-unit-test"
+        cls.namespace = "job-namespace-unit-test6"
 
         username = ""
         password = ""
@@ -39,7 +39,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="openebs-kernel-nfs-scw",
+            storage_class="standard",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -55,7 +55,7 @@ class TestCalrissianExecution(unittest.TestCase):
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_s2_composite_job(self):
 
-        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
+        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian"
 
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)

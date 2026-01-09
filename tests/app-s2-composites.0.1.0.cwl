@@ -7,6 +7,10 @@ $graph:
       - class: ScatterFeatureRequirement
       - class: SubworkflowFeatureRequirement
       - class: MultipleInputFeatureRequirement
+      - class: NetworkAccess
+        networkAccess: true
+
+
     inputs:
       pre_stac_item:
         doc: Pre-event Sentinel-2 item
@@ -117,6 +121,9 @@ $graph:
           - cog_tif
   - class: CommandLineTool
     id: asset_single_clt
+    label: Fetch single STAC asset
+    doc: Fetches a single asset from a STAC item using curl
+    cwlVersion: v1.1
     requirements:
       DockerRequirement:
         dockerPull: docker.io/curlimages/curl:latest
@@ -125,24 +132,45 @@ $graph:
         ramMax: 2000
       ShellCommandRequirement: {}
       InlineJavascriptRequirement: {}
-    baseCommand: [curl, -s]
+      NetworkAccess:
+        networkAccess: true
+    baseCommand: [curl]
     arguments:
-      - $( inputs.stac_item )
-    stdout: message
+      - "-s"
+      - "-H"
+      - "Accept: application/json"
     inputs:
       stac_item:
         type: string
+        inputBinding:
+          position: 1
       asset:
         type: string
+    stdout: message
     outputs:
       asset_href:
-        type: Any
+        type: ["null", "string"]
         outputBinding:
           glob: message
           loadContents: true
-          outputEval: |-
-            ${ var assets = JSON.parse(self[0].contents).assets;
-            return assets[inputs.asset].href; }
+          outputEval: |
+            ${
+              try {
+                if (!self[0].contents || self[0].contents.trim() === "") {
+                  return null;
+                }
+                var obj = JSON.parse(self[0].contents);
+                if (!obj.assets || !obj.assets[inputs.asset]) {
+                  return null;
+                }
+                // Return href string
+                return obj.assets[inputs.asset].href;
+              } catch(e) {
+                return null;
+              }
+            }
+
+
   - class: CommandLineTool
     id: translate_clt
     requirements:
@@ -151,7 +179,9 @@ $graph:
         coresMax: 2
         ramMax: 2000
       DockerRequirement:
-        dockerPull: docker.io/osgeo/gdal
+        dockerPull: osgeo/gdal:alpine-small-3.6.3
+      NetworkAccess:
+        networkAccess: true
     baseCommand: gdal_translate
     arguments:
       - -projwin
@@ -210,7 +240,9 @@ $graph:
     requirements:
       InlineJavascriptRequirement: {}
       DockerRequirement:
-        dockerPull: osgeo/gdal
+        dockerPull: osgeo/gdal:alpine-small-3.6.3
+      NetworkAccess:
+        networkAccess: true
       ResourceRequirement:
         coresMax: 2
         ramMax: 2000
