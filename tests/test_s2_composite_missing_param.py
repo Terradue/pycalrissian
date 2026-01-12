@@ -8,7 +8,7 @@ from pycalrissian.context import CalrissianContext
 from pycalrissian.execution import CalrissianExecution
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "~/.kube/config"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianExecution(unittest.TestCase):
@@ -41,7 +41,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )

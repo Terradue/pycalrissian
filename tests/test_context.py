@@ -12,7 +12,7 @@ from kubernetes.client.models.v1_secret import V1Secret
 from loguru import logger
 from pycalrissian.context import CalrissianContext
 
-os.environ["KUBECONFIG"] = "~/.kube/config"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianContext(unittest.TestCase):
@@ -130,7 +130,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="1G",
         )
 
@@ -152,7 +152,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="1G",
         )
 
@@ -182,7 +182,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="1G",
         )
 
@@ -229,7 +229,7 @@ class TestCalrissianContext(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="1G",
             image_pull_secrets={"imagePullSecrets": secret_config},
         )

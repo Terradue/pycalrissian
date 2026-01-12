@@ -4,7 +4,7 @@ import unittest
 from loguru import logger
 from pycalrissian.context import CalrissianContext
 
-os.environ["KUBECONFIG"] = "~/.kube/config"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianExecution(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )

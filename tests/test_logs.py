@@ -8,7 +8,7 @@ from pycalrissian.context import CalrissianContext
 from pycalrissian.execution import CalrissianExecution
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "~/.kube/config"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianExecutionLogs(unittest.TestCase):
@@ -39,7 +39,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -58,7 +58,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
             f"-----\n------------------------------  unit test for test_job_tool_logs from test_logs.py   ------------------------------\n\n"
         )
         sleep(30)
-        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian"
+        os.environ["CALRISSIAN_IMAGE"] = "ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
 
         with open("tests/logs.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)

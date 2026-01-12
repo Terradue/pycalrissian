@@ -8,7 +8,7 @@ from loguru import logger
 from pycalrissian.context import CalrissianContext
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "~/.kube/config"
+os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
 
 
 class TestCalrissianJob(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestCalrissianJob(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="standard",  # "microk8s-hostpath",
+            storage_class="longhorn",  # "microk8s-hostpath",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
@@ -91,7 +91,7 @@ class TestCalrissianJob(unittest.TestCase):
         )
         sleep(60)
         self.session.initialise()
-        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:latest"
+        os.environ["CALRISSIAN_IMAGE"] = "ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
 
         document = "tests/simple.cwl"
 

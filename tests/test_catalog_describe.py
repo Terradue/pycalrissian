@@ -55,7 +55,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="standard",
+            storage_class="longhorn",
             volume_size="10G",
             image_pull_secrets=secret_config,
         )
