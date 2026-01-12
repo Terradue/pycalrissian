@@ -9,41 +9,55 @@ from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolu
 from kubernetes.client.models.v1_role import V1Role
 from kubernetes.client.models.v1_role_binding import V1RoleBinding
 from kubernetes.client.models.v1_secret import V1Secret
-
+from loguru import logger
 from pycalrissian.context import CalrissianContext
 
-os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/config"
 
 
 class TestCalrissianContext(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.namespace = "dummy-namespace"
+        cls.namespace = "dummy-namespace2"
 
     def test_env(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_env from test_context.py   ------------------------------\n\n"
+        )
         self.assertIsNotNone(os.getenv("KUBECONFIG", None))
 
     def test_core_v1_api(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_core_v1_api from test_context.py   ------------------------------\n\n"
+        )
         session = CalrissianContext(
-            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+            namespace=self.namespace, storage_class="dummy", volume_size="1G",
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test_rbac_authorization_v1_api"
         )
 
         self.assertIsNotNone(session.core_v1_api)
 
     def test_rbac_authorization_v1_api(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_rbac_authorization_v1_api from test_context.py   ------------------------------\n\n"
+        )
         session = CalrissianContext(
-            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+            namespace=self.namespace, storage_class="dummy", volume_size="1G",
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test_rbac_authorization_v1_api"
         )
 
         self.assertIsNotNone(session.rbac_authorization_v1_api)
 
     def test_create_namespace(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_create_namespace from test_context.py   ------------------------------\n\n" 
+        )
         session = CalrissianContext(
-            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+            namespace=self.namespace, storage_class="dummy", volume_size="1G", calling_workspace=None, executing_workspace=None , job_id="test-job"
         )
 
         # if session.is_namespace_created():
@@ -55,9 +69,11 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsNotNone(response)
 
     def test_create_role_1(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_create_role_1 from test_context.py   ------------------------------\n\n"
+        )
         session = CalrissianContext(
-            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+            namespace=self.namespace, storage_class="dummy", volume_size="1G", calling_workspace=None, executing_workspace=None , job_id="test_create_role_1"
         )
 
         if not session.is_namespace_created():
@@ -82,9 +98,11 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1Role)
 
     def test_create_role_binding_1(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_create_role_binding_1 from test_context.py   ------------------------------\n\n"
+        )
         session = CalrissianContext(
-            namespace=self.namespace, storage_class="dummy", volume_size="1G"
+            namespace=self.namespace, storage_class="dummy", volume_size="1G", calling_workspace=None, executing_workspace=None , job_id="test_create_role_binding_1"
         )
 
         if not session.is_namespace_created():
@@ -113,11 +131,16 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1RoleBinding)
 
     def test_create_volume(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_create_volume from test_context.py   ------------------------------\n\n"
+        )
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="microk8s-hostpath",
+            storage_class="standard",
             volume_size="1G",
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test_create_volume"
         )
 
         if not session.is_namespace_created():
@@ -133,11 +156,16 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1PersistentVolumeClaim)
 
     def test_configmap_from_dict_as_yaml(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_configmap_from_dict_as_yaml from test_context.py   ------------------------------\n\n"
+        )
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="microk8s-hostpath",
+            storage_class="standard",
             volume_size="1G",
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test_configmap_from_dict_as_yaml"
         )
 
         if not session.is_namespace_created():
@@ -161,11 +189,16 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1ConfigMap)
 
     def test_configmap_from_dict_as_json(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_configmap_from_dict_as_json from test_context.py   ------------------------------\n\n"
+        )
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="microk8s-hostpath",
+            storage_class="standard",
             volume_size="1G",
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test_configmap_from_dict_as_json"
         )
 
         if not session.is_namespace_created():
@@ -186,7 +219,9 @@ class TestCalrissianContext(unittest.TestCase):
         self.assertIsInstance(response, V1ConfigMap)
 
     def test_secret_creation(self):
-
+        logger.info(
+            f"-----\n------------------------------  unit test for test_secret_creation from test_context.py   ------------------------------\n\n"
+        )
         username = "pippo"
         password = "pippo"
         email = "john.doe@me.com"
@@ -209,9 +244,12 @@ class TestCalrissianContext(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=self.namespace,
-            storage_class="microk8s-hostpath",
+            storage_class="standard",
             volume_size="1G",
-            image_pull_secrets=secret_config,
+            image_pull_secrets={"imagePullSecrets": secret_config},
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test_secret_creation"
         )
 
         if not session.is_namespace_created():
