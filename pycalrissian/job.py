@@ -488,10 +488,10 @@ class CalrissianJob:
         if self.tool_logs:
             args.extend(["--tool-logs-basepath", self.calrissian_base_path])
 
-        # args.extend(["--executing-workspace", self.executing_workspace])
-        # args.extend(["--calling-workspace", self.calling_workspace])
+        args.extend(["--executing-workspace", self.executing_workspace])
+        args.extend(["--calling-workspace", self.calling_workspace])
 
-        #args.extend(["--calling-service-account", self.calling_service_account])
+        args.extend(["--calling-service-account", self.calling_service_account])
 
         args.extend(["--enable-ext"])
 
@@ -530,7 +530,7 @@ class CalrissianJob:
             logger.info("pods created by calrissian will not be deleted")
 
         calrissian_image = os.getenv(
-            "CALRISSIAN_IMAGE", default="ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
+            "CALRISSIAN_IMAGE", default="terradue/calrissian:0.12.0"
         )
 
         logger.info(f"using Calrissian image: {calrissian_image}")
