@@ -107,7 +107,7 @@ class TestCalrissianJob(unittest.TestCase):
             content="[]",
         )
         logger.info("workspace-config ConfigMap created")
-        os.environ["CALRISSIAN_IMAGE"] = "ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
+        os.environ["CALRISSIAN_IMAGE"] = "public.ecr.aws/eodh/eodhp-calrissian:0.1.9"
 
         document = "tests/simple.cwl"
 

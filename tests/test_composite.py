@@ -36,7 +36,7 @@ class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.namespace = "job-namespace-unit-test6"
-        cls.job_id = "test-composite-job"
+        cls.job_id = "test-composite-job1"
 
         # -------------------------------
         # Hard-coded image pull secret
@@ -65,8 +65,8 @@ class TestCalrissianExecution(unittest.TestCase):
             volume_size="10G",
             image_pull_secrets={"imagePullSecrets": image_pull_secret},
             kubeconfig_file=os.environ.get("KUBECONFIG"),
-            calling_workspace=None,
-            executing_workspace=None,
+            calling_workspace="",
+            executing_workspace="",
             job_id=cls.job_id,
         )
         cls.session.initialise()
@@ -85,12 +85,12 @@ class TestCalrissianExecution(unittest.TestCase):
     def tearDownClass(cls):
         cls.session.dispose()
 
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_s2_composite_job(self):
         logger.info("----- Running unit test: test_s2_composite_job -----\n")
 
         # Public image (pull secret is included for future private images)
-        os.environ["CALRISSIAN_IMAGE"] = "ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
+        os.environ["CALRISSIAN_IMAGE"] = "public.ecr.aws/eodh/eodhp-calrissian:0.1.9"
 
         # Load CWL workflow
         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
@@ -118,8 +118,8 @@ class TestCalrissianExecution(unittest.TestCase):
             keep_pods=False,
             backoff_limit=1,
             tool_logs=True,
-            calling_workspace=None,
-            executing_workspace=None,
+            calling_workspace="",
+            executing_workspace="",
             job_id=self.job_id,
         )
 

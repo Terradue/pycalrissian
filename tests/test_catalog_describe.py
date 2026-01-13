@@ -111,7 +111,7 @@ class TestCalrissianExecution(unittest.TestCase):
         cls.session.dispose()
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_describe_catalog(self):
-        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:0.11.0-logs"
+        os.environ["CALRISSIAN_IMAGE"] = "public.ecr.aws/eodh/eodhp-calrissian:0.1.9"
 
         with open("tests/describe-catalog.cwl", "r", encoding="utf-8") as f:
             cwl = yaml.safe_load(f)

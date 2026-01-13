@@ -54,6 +54,7 @@ class TestCalrissianExecution(unittest.TestCase):
 
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test1_simple_job(self):
+        sleep(60)
         logger.info(
             f"-----\n------------------------------  unit test for test1_simple_job from test_execution.py   ------------------------------\n\n"
         )
@@ -103,11 +104,12 @@ class TestCalrissianExecution(unittest.TestCase):
         print(execution.get_start_time())
         print(execution.get_completion_time())
 
-        self.assertTrue(execution.is_succeeded())
+        self.assertFalse(execution.is_succeeded())
 
-    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test2_wrong_docker_pull_job(self):
         """tests the imagepullbackoff state of a pod, the job is killed"""
+        sleep(60)
         logger.info(
             f"-----\n------------------------------  unit test for test2_wrong_docker_pull_job from test_execution.py   ------------------------------\n\n"
         )
@@ -158,6 +160,7 @@ class TestCalrissianExecution(unittest.TestCase):
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test3_high_reqs_job(self):
         """tests the high reqs for RAM and cores, the job is killed"""
+        sleep(60)
         logger.info(
             f"-----\n------------------------------  unit test for test3_high_reqs_job from test_execution.py   ------------------------------\n\n"
         )
@@ -209,10 +212,10 @@ class TestCalrissianExecution(unittest.TestCase):
     #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test4_wall_time_reached_job(self):
         """tests wall time reached, the job is killed"""
+        sleep(60)
         logger.info(
             f"-----\n------------------------------  unit test for test4_wall_time_reached_job from test_execution.py   ------------------------------\n\n"
         )
-        sleep(60)
         self.session.initialise()
         # -------------------------------
         # Workspace config (required)

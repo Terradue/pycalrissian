@@ -14,8 +14,8 @@ os.environ["KUBECONFIG"] = "~/.kube/config"
 class TestCalrissianExecutionLogs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.namespace = "job-namespace-unit-test"
-
+        cls.namespace = "job-namespace-unit-test-log"
+        cls.job_id = "test-logs-job"
         username = "fabricebrito"
         password = ""
         email = "fabrice.brito@terradue.com"
@@ -42,7 +42,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
             image_pull_secrets={"imagePullSecrets": secret_config},
             calling_workspace=None,
             executing_workspace=None,
-            job_id="test-calrissian-job",
+            job_id=cls.job_id,
             
         )
 
@@ -65,7 +65,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
             f"-----\n------------------------------  unit test for test_job_tool_logs from test_logs.py   ------------------------------\n\n"
         )
         sleep(30)
-        os.environ["CALRISSIAN_IMAGE"] = "ghcr.io/duke-gcb/calrissian/calrissian:0.18.1"
+        os.environ["CALRISSIAN_IMAGE"] = "public.ecr.aws/eodh/eodhp-calrissian:0.1.9"
 
         with open("tests/logs.cwl", "r") as stream:
             cwl = yaml.safe_load(stream)
@@ -86,6 +86,9 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
             keep_pods=False,
             backoff_limit=1,
             tool_logs=True,
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id=self.job_id,
         )
 
         execution = CalrissianExecution(job=job, runtime_context=self.session)
