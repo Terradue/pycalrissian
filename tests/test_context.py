@@ -25,7 +25,7 @@ class TestCalrissianContext(unittest.TestCase):
             f"-----\n------------------------------  unit test for test_env from test_context.py   ------------------------------\n\n"
         )
         self.assertIsNotNone(os.getenv("KUBECONFIG", None))
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_core_v1_api(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_core_v1_api from test_context.py   ------------------------------\n\n"
@@ -38,7 +38,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsNotNone(session.core_v1_api)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_rbac_authorization_v1_api(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_rbac_authorization_v1_api from test_context.py   ------------------------------\n\n"
@@ -51,7 +51,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsNotNone(session.rbac_authorization_v1_api)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_create_namespace(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_create_namespace from test_context.py   ------------------------------\n\n" 
@@ -67,7 +67,7 @@ class TestCalrissianContext(unittest.TestCase):
         response = session.create_namespace()
 
         self.assertIsNotNone(response)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_create_role_1(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_create_role_1 from test_context.py   ------------------------------\n\n"
@@ -96,7 +96,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsInstance(response, V1Role)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_create_role_binding_1(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_create_role_binding_1 from test_context.py   ------------------------------\n\n"
@@ -129,7 +129,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsInstance(response, V1RoleBinding)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_create_volume(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_create_volume from test_context.py   ------------------------------\n\n"
@@ -154,7 +154,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsInstance(response, V1PersistentVolumeClaim)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_configmap_from_dict_as_yaml(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_configmap_from_dict_as_yaml from test_context.py   ------------------------------\n\n"
@@ -187,7 +187,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsInstance(response, V1ConfigMap)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_configmap_from_dict_as_json(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_configmap_from_dict_as_json from test_context.py   ------------------------------\n\n"
@@ -217,7 +217,7 @@ class TestCalrissianContext(unittest.TestCase):
         )
 
         self.assertIsInstance(response, V1ConfigMap)
-
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_secret_creation(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_secret_creation from test_context.py   ------------------------------\n\n"

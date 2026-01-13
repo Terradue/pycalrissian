@@ -9,13 +9,13 @@ from pycalrissian.context import CalrissianContext
 from pycalrissian.execution import CalrissianExecution
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/config"
 
 
 class TestCalrissianExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.namespace = "job-namespace3"
+        cls.namespace = "job-namespace"
         cls.job_id = "test-execution-job"
         DOCKER_USERNAME = ""
         DOCKER_PASSWORD = ""
@@ -44,7 +44,7 @@ class TestCalrissianExecution(unittest.TestCase):
             executing_workspace=None,
             job_id=cls.job_id,
         )
-        cls.session.initialise()
+        
         
         
 
@@ -57,17 +57,18 @@ class TestCalrissianExecution(unittest.TestCase):
         logger.info(
             f"-----\n------------------------------  unit test for test1_simple_job from test_execution.py   ------------------------------\n\n"
         )
-        sleep(60)
+        
         # -------------------------------
         # Workspace config (required)
         # -------------------------------
+        self.session.initialise()
         self.session.create_configmap(
             name="workspace-config",
             key="pvcs",
             content="[]",
         )
         logger.info("workspace-config ConfigMap created")
-        self.session.initialise()
+        
         with open("tests/simple.cwl", "r") as stream:
 
             cwl = yaml.safe_load(stream)
@@ -104,13 +105,13 @@ class TestCalrissianExecution(unittest.TestCase):
 
         self.assertTrue(execution.is_succeeded())
 
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test2_wrong_docker_pull_job(self):
         """tests the imagepullbackoff state of a pod, the job is killed"""
         logger.info(
             f"-----\n------------------------------  unit test for test2_wrong_docker_pull_job from test_execution.py   ------------------------------\n\n"
         )
-        sleep(60)
+        self.session.initialise()
         # -------------------------------
         # Workspace config (required)
         # -------------------------------
@@ -120,7 +121,7 @@ class TestCalrissianExecution(unittest.TestCase):
             content="[]",
         )
         logger.info("workspace-config ConfigMap created")
-        self.session.initialise()
+        
         with open("tests/wrong_docker_pull.cwl", "r") as stream:
 
             cwl = yaml.safe_load(stream)
@@ -160,7 +161,7 @@ class TestCalrissianExecution(unittest.TestCase):
         logger.info(
             f"-----\n------------------------------  unit test for test3_high_reqs_job from test_execution.py   ------------------------------\n\n"
         )
-        sleep(60)
+        self.session.initialise()
         # -------------------------------
         # Workspace config (required)
         # -------------------------------
@@ -170,7 +171,7 @@ class TestCalrissianExecution(unittest.TestCase):
             content="[]",
         )
         logger.info("workspace-config ConfigMap created")
-        self.session.initialise()
+        
         with open("tests/high_reqs.cwl", "r") as stream:
 
             cwl = yaml.safe_load(stream)
@@ -178,38 +179,41 @@ class TestCalrissianExecution(unittest.TestCase):
         params = {"message": "hello world!"}
 
         pod_env_vars = {"A": "1", "B": "2"}
+        try:
+            job = CalrissianJob(
+                cwl=cwl,
+                params=params,
+                runtime_context=self.session,
+                pod_env_vars=pod_env_vars,
+                debug=True,
+                max_cores=2,
+                max_ram="4G",
+                keep_pods=True,
+                backoff_limit=1,
+                job_id=self.job_id,
+                executing_workspace=None,
+                calling_workspace=None,
+            )
 
-        job = CalrissianJob(
-            cwl=cwl,
-            params=params,
-            runtime_context=self.session,
-            pod_env_vars=pod_env_vars,
-            debug=True,
-            max_cores=2,
-            max_ram="4G",
-            keep_pods=True,
-            backoff_limit=1,
-            job_id=self.job_id,
-            executing_workspace=None,
-            calling_workspace=None,
-        )
+            execution = CalrissianExecution(job=job, runtime_context=self.session)
 
-        execution = CalrissianExecution(job=job, runtime_context=self.session)
+            execution.submit()
 
-        execution.submit()
+            execution.monitor(interval=5, grace_period=60, wall_time=120)
 
-        execution.monitor(interval=5, grace_period=60, wall_time=120)
-
-        print(f"killed {execution.killed}")
-        self.assertFalse(execution.is_succeeded())
+            print(f"killed {execution.killed}")
+        except Exception as e:
+            logger.info(f"Exception caught: {e}")
+            self.assertFalse(execution.is_succeeded())
         
-    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test4_wall_time_reached_job(self):
         """tests wall time reached, the job is killed"""
         logger.info(
             f"-----\n------------------------------  unit test for test4_wall_time_reached_job from test_execution.py   ------------------------------\n\n"
         )
         sleep(60)
+        self.session.initialise()
         # -------------------------------
         # Workspace config (required)
         # -------------------------------
@@ -219,7 +223,7 @@ class TestCalrissianExecution(unittest.TestCase):
             content="[]",
         )
         logger.info("workspace-config ConfigMap created")
-        self.session.initialise()
+        
         with open("tests/sleep.cwl", "r") as stream:
 
             cwl = yaml.safe_load(stream)

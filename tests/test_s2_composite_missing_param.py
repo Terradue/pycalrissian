@@ -1,107 +1,115 @@
-# import base64
-# import os
-# import unittest
+import base64
+import os
+import unittest
 
-# import yaml
-# from loguru import logger
-# from pycalrissian.context import CalrissianContext
-# from pycalrissian.execution import CalrissianExecution
-# from pycalrissian.job import CalrissianJob
+import yaml
+from loguru import logger
+from pycalrissian.context import CalrissianContext
+from pycalrissian.execution import CalrissianExecution
+from pycalrissian.job import CalrissianJob
 
-# os.environ["KUBECONFIG"] = "~/.kube/config"
+os.environ["KUBECONFIG"] = "~/.kube/config"
 
 
-# class TestCalrissianExecution(unittest.TestCase):
-#     @classmethod
-#     def setUpClass(cls):
-#         cls.namespace = "job-namespace5"
+class TestCalrissianExecution(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.namespace = "job-namespace5"
 
-#         username = "fabricebrito"
-#         password = "1f54397c-f15c-4be4-b9ea-4220fb2d80ce"
-#         email = "fabrice.brito@terradue.com"
-#         registry = "https://index.docker.io/v1/"
+        username = "fabricebrito"
+        password = "1f54397c-f15c-4be4-b9ea-4220fb2d80ce"
+        email = "fabrice.brito@terradue.com"
+        registry = "https://index.docker.io/v1/"
 
-#         auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
-#             "utf-8"
-#         )
+        auth = base64.b64encode(f"{username}:{password}".encode()).decode()
 
-#         secret_config = {
-#             "auths": {
-#                 registry: {
-#                     "username": username,
-#                     "password": password,
-#                     "email": email,
-#                     "auth": auth,
-#                 },
-#                 "registry.gitlab.com": {
-#                     "auth": "Z2l0bGFiK2RlcGxveS10b2tlbi04NzY3OTQ6Vnc3Z1NpSHllaVlwLS0zUnEtc3o="  # noqa: E501
-#                 },
-#             }
-#         }
+        secret_config = {
+            "auths": {
+                registry: {
+                    "username": username,
+                    "password": password,
+                    "email": email,
+                    "auth": auth,
+                },
+                "registry.gitlab.com": {
+                    "auth": "Z2l0bGFiK2RlcGxveS10b2tlbi04NzY3OTQ6Vnc3Z1NpSHllaVlwLS0zUnEtc3o="  # noqa: E501
+                },
+            }
+        }
 
-#         session = CalrissianContext(
-#             namespace=cls.namespace,
-#             storage_class="standard",
-#             volume_size="10G",
-#             image_pull_secrets=secret_config,
-#         )
+        session = CalrissianContext(
+            namespace=cls.namespace,
+            storage_class="standard",
+            volume_size="10G",
+            image_pull_secrets={"imagePullSecrets": secret_config},
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test-s2-composite-job",
+        )
 
-#         session.initialise()
+        session.initialise()
+        session.create_configmap(
+            name="workspace-config",
+            key="pvcs",
+            content="[]",
+        )
+        cls.session = session
 
-#         cls.session = session
+    @classmethod
+    def tearDown(cls):
+        cls.session.dispose()
+    #@unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
+    def test_job(self):
+        logger.info(
+            f"-----\n------------------------------  unit test for test_s2_composite_job from test_s2_composite.py   ------------------------------\n\n"
+        )
+        with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
+            cwl = yaml.safe_load(stream)
 
-#     @classmethod
-#     def tearDown(cls):
-#         cls.session.dispose()
-#     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
-#     def test_job(self):
-#         logger.info(
-#             f"-----\n------------------------------  unit test for test_s2_composite_job from test_s2_composite.py   ------------------------------\n\n"
-#         )
-#         with open("tests/app-s2-composites.0.1.0.cwl", "r") as stream:
-#             cwl = yaml.safe_load(stream)
+        params = {
+            "post_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A",  # noqa: E501
+            "aoi": "136.659,-35.96,136.923,-35.791",
+        }
 
-#         params = {
-#             "post_stac_item": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items/S2B_53HPA_20210723_0_L2A",  # noqa: E501
-#             "aoi": "136.659,-35.96,136.923,-35.791",
-#         }
+        pod_env_vars = {"A": "1", "B": "2"}
 
-#         pod_env_vars = {"A": "1", "B": "2"}
+        job = CalrissianJob(
+            cwl=cwl,
+            params=params,
+            runtime_context=self.session,
+            cwl_entry_point="dnbr",
+            pod_env_vars=pod_env_vars,
+            debug=False,
+            max_cores=2,
+            max_ram="4G",
+            keep_pods=False,
+            backoff_limit=1,
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test-s2-composite-job",
+        )
+        try:
+          execution = CalrissianExecution(job=job, runtime_context=self.session)
 
-#         job = CalrissianJob(
-#             cwl=cwl,
-#             params=params,
-#             runtime_context=self.session,
-#             cwl_entry_point="dnbr",
-#             pod_env_vars=pod_env_vars,
-#             debug=False,
-#             max_cores=2,
-#             max_ram="4G",
-#             keep_pods=False,
-#             backoff_limit=1,
-#         )
-#         try:
-#           execution = CalrissianExecution(job=job, runtime_context=self.session)
+          execution.submit()
 
-#           execution.submit()
+          execution.monitor(interval=5, wall_time=120)
 
-#           execution.monitor(interval=5, wall_time=120)
+          log = execution.get_log()
+          print(log)
+          usage = execution.get_usage_report()
 
-#           log = execution.get_log()
-#           print(log)
-#           usage = execution.get_usage_report()
+          print(usage)
+          print(type(usage))
 
-#           print(usage)
-#           print(type(usage))
+          output = execution.get_output()
+          print(f"output: {output}")
 
-#           output = execution.get_output()
-#           print(f"output: {output}")
+          print(execution.get_start_time())
+          print(execution.get_completion_time())
 
-#           print(execution.get_start_time())
-#           print(execution.get_completion_time())
-
-#           print(f"complete {execution.is_complete()}")
-#           print(f"succeeded {execution.is_succeeded()}")
-#         except Exception as e:
-#           print(f"Exception during execution: {e}")
-#           self.assertFalse(execution.is_succeeded())
+          print(f"complete {execution.is_complete()}")
+          print(f"succeeded {execution.is_succeeded()}")
+        except Exception as e:
+          print(f"Exception during execution: {e}")
+          self.assertFalse(execution.is_succeeded())
