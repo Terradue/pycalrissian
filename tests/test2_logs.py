@@ -60,7 +60,7 @@ class TestCalrissianExecutionLogs(unittest.TestCase):
         cls.session.dispose()
         
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
-    def test_job_tool_logs(self):
+    def test1_job_tool_logs(self):
         logger.info(
             f"-----\n------------------------------  unit test for test_job_tool_logs from test_logs.py   ------------------------------\n\n"
         )
