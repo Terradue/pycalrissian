@@ -246,8 +246,7 @@ class CalrissianExecution:
                     self.killed = True
                     self.runtime_context.batch_v1_api.delete_namespaced_job(
                         namespace=self.runtime_context.namespace,
-                        name=self.namespaced_job_name,
-                        _request_timeout=wall_time,
+                        name=self.namespaced_job_name
                     )
                     return
 
@@ -260,8 +259,7 @@ class CalrissianExecution:
                         self.killed = True
                         self.runtime_context.batch_v1_api.delete_namespaced_job(
                             namespace=self.runtime_context.namespace,
-                            name=self.namespaced_job_name,
-                            _request_timeout=wall_time,
+                            name=self.namespaced_job_name
                         )
                         return
 
