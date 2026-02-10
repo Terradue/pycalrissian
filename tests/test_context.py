@@ -105,7 +105,7 @@ class TestCalrissianContext(unittest.TestCase):
         response = session.create_role(
             name=role_name,
             verbs=roles["pod-manager-role"]["verbs"],
-            resources=["pods", "pods/log"],
+            resources=["pods", "pods/log", "configmaps", "secrets"],
             api_groups=["*"],
         )
 

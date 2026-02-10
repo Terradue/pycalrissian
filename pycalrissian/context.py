@@ -26,6 +26,7 @@ class CalrissianContext:
         kubeconfig_file: TextIO = None,
         labels: Dict = None,
         annotations: Dict = None,
+        service_account: str = None,
     ):
         """Creates a CalrissianContext object
 
@@ -62,7 +63,7 @@ class CalrissianContext:
         self.annotations = annotations
 
         self.existing_namespace = False
-        self.service_account = None
+        self.service_account = service_account
 
     @classmethod
     def from_existing_namespace(
@@ -140,10 +141,14 @@ class CalrissianContext:
 
             for key, value in roles.items():
                 logger.info(f"create role {key}")
+                # Add configmaps and secrets to pod-manager-role resources
+                resources = ["pods", "pods/log"]
+                if key == "pod-manager-role":
+                    resources.extend(["configmaps", "secrets"])
                 response = self.create_role(
                     name=key,
                     verbs=value["verbs"],
-                    resources=["pods", "pods/log"],
+                    resources=resources,
                     api_groups=["*"],
                 )
                 # print(type(response))
