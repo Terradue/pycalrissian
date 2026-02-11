@@ -45,7 +45,9 @@ class CalrissianJob:
         keep_pods: bool = False,
         backoff_limit: int = 2,
         tool_logs: bool = False,
-        ttl_seconds_after_finished: int = None
+        ttl_seconds_after_finished: int = None,
+        dask_gateway_url: str = None,
+        dask_script_configmap: str = None
     ):
 
         self.cwl = cwl
@@ -66,6 +68,8 @@ class CalrissianJob:
         self.volume_calrissian_wdir = "volume-calrissian-wdir"
         self.tool_logs = tool_logs
         self.ttl_seconds_after_finished = ttl_seconds_after_finished
+        self.dask_gateway_url = dask_gateway_url
+        self.dask_script_configmap = dask_script_configmap
 
         if runtime_context.service_account is not None:
             logger.info(f"using '{runtime_context.service_account}' service account selected from runtime context")
@@ -388,6 +392,12 @@ class CalrissianJob:
             args.extend(["--tool-logs-basepath", self.calrissian_base_path])
 
         args.extend(["--enable-ext"])
+
+        # Add Dask Gateway arguments if provided
+        if self.dask_gateway_url:
+            args.extend(["--dask-gateway-url", self.dask_gateway_url])
+        if self.dask_script_configmap:
+            args.extend(["--dask-script-configmap", self.dask_script_configmap])
 
         if self.cwl_entry_point is not None:
             args.extend(
