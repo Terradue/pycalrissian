@@ -236,7 +236,8 @@ class CalrissianContext:
     @staticmethod
     def _get_api_client(kubeconfig_file: TextIO = None):
 
-        proxy_url = os.getenv("HTTP_PROXY", None)
+        
+        proxy_url = os.getenv("KUBE_API_PROXY_URL", None)
         kubeconfig = os.getenv("KUBECONFIG", None)
 
         if proxy_url:
