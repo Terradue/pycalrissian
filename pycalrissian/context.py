@@ -129,11 +129,8 @@ class CalrissianContext:
 
         # create additional calling workspace PVC only when calling_workspace is provided
         if self.calling_workspace != self.executing_workspace:
-            # Load kubeconfig
-            config.load_incluster_config()
-
-            # Create a CustomObjectsApi client instance
-            custom_api = client.CustomObjectsApi()
+            # Reuse the already-configured api_client (routes through kubeproxy)
+            custom_api = client.CustomObjectsApi(api_client=self.api_client)
 
             # extract calling workspace details
             try:
