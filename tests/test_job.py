@@ -1,29 +1,27 @@
 import base64
 import os
 import unittest
-
+from time import sleep
 from kubernetes.client.models.v1_job import V1Job
 from ruamel import yaml
-
+from loguru import logger
 from pycalrissian.context import CalrissianContext
 from pycalrissian.job import CalrissianJob
 
-os.environ["KUBECONFIG"] = "~/.kube/kubeconfig-t2-dev.yaml"
+os.environ["KUBECONFIG"] = "~/.kube/config"
 
 
 class TestCalrissianJob(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.namespace = "job-namespace"
+        cls.namespace = "job-namespace4"
 
         username = "pippo"
         password = "pippo"
         email = "john.doe@me.com"
         registry = "1ui32139.gra7.container-registry.ovh.net"
 
-        auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
-            "utf-8"
-        )
+        auth = base64.b64encode(f"{username}:{password}".encode()).decode()
 
         secret_config = {
             "auths": {
@@ -38,9 +36,12 @@ class TestCalrissianJob(unittest.TestCase):
 
         session = CalrissianContext(
             namespace=cls.namespace,
-            storage_class="openebs-kernel-nfs-scw",  # "microk8s-hostpath",
+            storage_class="standard",  # "microk8s-hostpath",
             volume_size="10G",
-            image_pull_secrets=secret_config,
+            image_pull_secrets={"imagePullSecrets": secret_config},
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test-calrissian-job",
         )
 
         session.initialise()
@@ -54,6 +55,17 @@ class TestCalrissianJob(unittest.TestCase):
     @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_job(self):
         # TODO check why this fails with namespace is being terminated
+        logger.info(
+            f"-----\n------------------------------  unit test for test_job from test_execution.py   ------------------------------\n\n"
+        )
+        sleep(60)
+        self.session.initialise()
+        self.session.create_configmap(
+            name="workspace-config",
+            key="pvcs",
+            content="[]",
+        )
+        logger.info("workspace-config ConfigMap created")
         document = "tests/simple.cwl"
         with open(document) as doc_handle:
             yaml_obj = yaml.YAML()
@@ -75,14 +87,27 @@ class TestCalrissianJob(unittest.TestCase):
             max_cores=2,
             max_ram="4G",
             keep_pods=True,
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test-calrissian-job",
         )
 
         job.to_yaml("job.yml")
         self.assertIsInstance(job.to_k8s_job(), V1Job)
-
+    @unittest.skipIf(os.getenv("CI_TEST_SKIP") == "1", "Test is skipped via env variable")
     def test_calrissian_image(self):
-
-        os.environ["CALRISSIAN_IMAGE"] = "terradue/calrissian:latest"
+        logger.info(
+            f"-----\n------------------------------  unit test for test_calrissian_image from test_job.py   ------------------------------\n\n"
+        )
+        sleep(60)
+        self.session.initialise()
+        self.session.create_configmap(
+            name="workspace-config",
+            key="pvcs",
+            content="[]",
+        )
+        logger.info("workspace-config ConfigMap created")
+        os.environ["CALRISSIAN_IMAGE"] = "public.ecr.aws/eodh/eodhp-calrissian:0.1.9"
 
         document = "tests/simple.cwl"
 
@@ -102,6 +127,9 @@ class TestCalrissianJob(unittest.TestCase):
             max_cores=2,
             max_ram="4G",
             keep_pods=True,
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test-calrissian-job",
         )
 
         self.assertEqual(

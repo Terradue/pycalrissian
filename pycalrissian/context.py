@@ -61,7 +61,7 @@ class CalrissianContext:
 
         self.image_pull_secrets = image_pull_secrets
         self.secret_name = "container-rg"
-
+        self.secret_names = []
         # set wdir to be job specific to avoid conflicts
         self.calrissian_wdir = f"calrissian-wdir-{job_id}"
 
@@ -236,7 +236,8 @@ class CalrissianContext:
     @staticmethod
     def _get_api_client(kubeconfig_file: TextIO = None):
 
-        proxy_url = os.getenv("HTTP_PROXY", None)
+        
+        proxy_url = os.getenv("KUBE_API_PROXY_URL", None)
         kubeconfig = os.getenv("KUBECONFIG", None)
 
         if proxy_url:
