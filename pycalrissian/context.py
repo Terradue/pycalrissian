@@ -222,6 +222,30 @@ class CalrissianContext:
             )
             raise e
 
+    def dispose_job_resources(self):
+        """Delete only the working-directory PVC created for this job,
+        leaving the namespace and its other, namespace-scoped resources
+        (roles, role bindings, image pull secret, resource quota - which
+        are shared across every job run in this namespace, not job
+        specific) intact.
+        """
+        logger.info(f"delete persistent volume claim {self.calrissian_wdir}")
+        self._delete_resource(
+            self.core_v1_api.delete_namespaced_persistent_volume_claim,
+            f"pvc {self.calrissian_wdir}",
+            name=self.calrissian_wdir,
+            namespace=self.namespace,
+        )
+
+    def _delete_resource(self, delete_fn, description, **kwargs):
+        try:
+            delete_fn(**kwargs)
+        except ApiException as e:
+            if e.status == HTTPStatus.NOT_FOUND:
+                logger.info(f"{description} already deleted")
+            else:
+                logger.error(f"Exception when deleting {description}: {e}\n")
+
     def delete_pod(self, name):
 
         try:

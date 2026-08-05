@@ -259,6 +259,66 @@ class TestCalrissianContext(unittest.TestCase):
 
         self.assertIsInstance(response, V1Secret)
 
+    def test_dispose_job_resources_keeps_namespace(self):
+        logger.info(
+            f"-----\n------------------------------  unit test for test_dispose_job_resources_keeps_namespace from test_context.py   ------------------------------\n\n"
+        )
+        username = "pippo"
+        password = "pippo"
+        email = "john.doe@me.com"
+        registry = "1ui32139.gra7.container-registry.ovh.net"
+
+        auth = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
+            "utf-8"
+        )
+
+        secret_config = {
+            "auths": {
+                registry: {
+                    "username": username,
+                    "password": password,
+                    "email": email,
+                    "auth": auth,
+                }
+            }
+        }
+
+        session = CalrissianContext(
+            namespace=self.namespace,
+            storage_class="standard",
+            volume_size="1G",
+            image_pull_secrets={"imagePullSecrets": secret_config},
+            resource_quota={"requests.storage": "1G"},
+            calling_workspace=None,
+            executing_workspace=None,
+            job_id="test_dispose_job_resources",
+        )
+
+        session.initialise()
+
+        session.dispose_job_resources()
+
+        # the job-specific PVC is gone
+        self.assertIsNone(session.is_pvc_created(name=session.calrissian_wdir))
+
+        # the namespace and its namespace-scoped resources (shared across
+        # every job run in this namespace) are untouched
+        self.assertIsNotNone(session.is_namespace_created())
+        self.assertIsNotNone(session.is_role_created(name="pod-manager-role"))
+        self.assertIsNotNone(session.is_role_created(name="log-reader-role"))
+        self.assertIsNotNone(
+            session.is_role_binding_created(name="pod-manager-default-binding")
+        )
+        self.assertIsNotNone(
+            session.is_role_binding_created(name="log-reader-default-binding")
+        )
+        self.assertIsNotNone(
+            session.is_image_pull_secret_created(name=session.secret_name)
+        )
+        self.assertIsNotNone(
+            session.is_resource_quota_created(name="calrissian-resource-quota")
+        )
+
 
 # # if __name__ == "__main__":
 # #     import nose2
